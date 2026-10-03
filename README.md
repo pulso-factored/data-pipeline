@@ -3,6 +3,7 @@
 Pipeline analítico (arquitectura medallón: bronze, silver, gold) con dbt + DuckDB para el sistema de atención bancaria de Pulso. Entrega datos limpios, con contrato y trazables a `agent-core` y a análisis/ML. No cubre lo transaccional.
 
 - Plan: [docs/00-plan-v1.md](docs/00-plan-v1.md)
+- Gobierno de datos y enmascaramiento: [docs/02-gobierno-de-datos.md](docs/02-gobierno-de-datos.md)
 - Hallazgos de calidad del dataset: [docs/01-hallazgos-de-calidad.md](docs/01-hallazgos-de-calidad.md)
 
 ## Reglas
@@ -10,7 +11,7 @@ Pipeline analítico (arquitectura medallón: bronze, silver, gold) con dbt + Duc
 - Nunca credenciales ni datos reales en el repo. Las credenciales del bucket del reto van por variables de entorno.
 - `labels` de la muestra E0 es solo para el evaluador.
 
-Estado: rebanada 4 lista (silver, modelo canónico `platform_history`, gold_restricted y gold_analytics, catálogo FieldClassification y marts de calidad). 144 comprobaciones de dbt + 7 tests.
+Estado: rebanada 5 lista (+ publicación con guardias y runner) (silver, modelo canónico `platform_history`, gold_restricted y gold_analytics, catálogo FieldClassification y marts de calidad). 145 comprobaciones de dbt + 14 tests unitarios.
 
 ## Uso local
 
@@ -20,5 +21,6 @@ export PIPELINE_ROOT=/ruta/absoluta/data PSEUDONYM_KEY=$(python -c "import secre
 uv run python -m pipeline.ingest_bank --tables customers,products,complaints
 uv run python -m pipeline.ingest_e0 --source /ruta/a/pulso_muestra_e0   # snapshot E0; labels van a bronze_eval/
 uv run dbt build --project-dir dbt --profiles-dir dbt
+uv run python -m pipeline.publish   # artefactos separados + release.json (o todo junto: python -m pipeline.run)
 uv run pytest
 ```

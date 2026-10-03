@@ -33,6 +33,13 @@ UNTRUSTED = {
     "description", "complaint_description", "resolution", "text", "question_text", "answer",
     "decision_note", "requester_note",
 }
+# Tags de los tokens (⟦tag:n⟧) y generalización de pii_quasi, según agent_core.views.classification.
+TAGS = {
+    "first_name": "name", "last_name": "name", "document_number": "doc", "email": "email",
+    "mobile_phone": "tel", "landline_phone": "tel", "address": "addr", "product_number": "prod",
+    "customer_id": "cus", "source_customer_id": "cus", "customer_pseudo": "cus",
+}
+QUASI_RULES = {"date_of_birth": ("age_bucket", 10)}  # el resto de pii_quasi se elimina (drop)
 SCOPE = [("silver", t) for t in ("customers", "products", "complaints", "transactions", "exchange_rates")]
 
 
@@ -63,11 +70,14 @@ def main() -> None:
             "select column_name from information_schema.columns where table_schema = ? and table_name = ? "
             "order by ordinal_position", [schema, table]
         ).fetchall():
-            rows.append((schema, table, col, classify(col)))
+            cls = classify(col)
+            tag = TAGS.get(col, "pii") if cls == "pii_direct" else "none"
+            qop, qwidth = (QUASI_RULES.get(col, ("drop", 10)) if cls == "pii_quasi" else ("none", 0))
+            rows.append((schema, table, col, cls, tag, qop, qwidth))
     out = ROOT / "dbt" / "seeds" / "field_classification.csv"
     with out.open("w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["schema_name", "table_name", "column_name", "class"])
+        w.writerow(["schema_name", "table_name", "column_name", "class", "tag", "quasi_op", "quasi_width"])
         w.writerows(rows)
     by_class: dict[str, int] = {}
     for r in rows:

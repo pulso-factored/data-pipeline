@@ -33,3 +33,5 @@ models:
 seeds:
   data_pipeline:
     +schema: ref
+    field_classification:
+      +column_types: { tag: varchar, quasi_op: varchar, quasi_width: varchar }
