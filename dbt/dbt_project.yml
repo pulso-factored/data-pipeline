@@ -19,6 +19,9 @@ models:
     quarantine:
       +schema: quarantine
       +materialized: table
+    canonical:
+      +schema: canonical
+      +materialized: table
 
 seeds:
   data_pipeline:

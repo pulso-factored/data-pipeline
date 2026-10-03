@@ -1,0 +1,82 @@
+version: 2
+
+# Modelo canónico = contrato platform_history v0.5.1, con source_system.
+# Fuentes: e0_sample (muestra), bank_complaints (mapeo de complaints). cc_platform se agrega al integrar la Plataforma CC.
+
+models:
+  - name: cases
+    description: "case del contrato. customer_id es siempre el cliente real del banco (CLI-); el seudónimo de E0 queda en source_customer_id."
+    columns:
+      - { name: case_id, data_tests: [unique, not_null] }
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships: { arguments: { to: ref('customers'), field: customer_id } }
+      - name: complaint_id
+        data_tests:
+          - unique
+          - relationships: { arguments: { to: ref('complaints'), field: complaint_id } }
+      - name: source_system
+        data_tests: [{ accepted_values: { arguments: { values: [e0_sample, bank_complaints] } } }]
+      - name: channel
+        data_tests: [{ accepted_values: { arguments: { values: [app_chat, web_chat, whatsapp, phone, email, video] } } }]
+      - name: origin
+        data_tests: [{ accepted_values: { arguments: { values: [customer, regulator, branch] } } }]
+      - name: priority
+        data_tests: [{ accepted_values: { arguments: { values: [low, medium, high] } } }]
+      - name: language
+        data_tests: [{ accepted_values: { arguments: { values: [es, pt] } } }]
+
+  - name: case_closes
+    columns:
+      - name: case_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships: { arguments: { to: ref('cases'), field: case_id } }
+      - name: resolution_code
+        data_tests: [{ accepted_values: { arguments: { values: [adjustment, escalated_to_area, explained, compensation, correction] } } }]
+      - name: csat
+        data_tests: [{ accepted_values: { arguments: { values: [1, 2, 3, 4], quote: false } } }]
+
+  - name: turns
+    columns:
+      - { name: turn_id, data_tests: [unique, not_null] }
+      - name: case_id
+        data_tests: [{ relationships: { arguments: { to: ref('cases'), field: case_id } } }]
+
+  - name: identity_checks
+    columns:
+      - { name: check_id, data_tests: [unique, not_null] }
+      - name: case_id
+        data_tests: [{ relationships: { arguments: { to: ref('cases'), field: case_id } } }]
+
+  - name: routing_steps
+    columns:
+      - { name: step_id, data_tests: [unique, not_null] }
+      - name: case_id
+        data_tests: [{ relationships: { arguments: { to: ref('cases'), field: case_id } } }]
+
+  - name: copilot_queries
+    columns:
+      - { name: query_id, data_tests: [unique, not_null] }
+      - name: case_id
+        data_tests: [{ relationships: { arguments: { to: ref('cases'), field: case_id } } }]
+
+  - name: tool_calls
+    columns:
+      - { name: call_id, data_tests: [unique, not_null] }
+      - name: case_id
+        data_tests: [{ relationships: { arguments: { to: ref('cases'), field: case_id } } }]
+      - name: permission_level
+        data_tests: [{ accepted_values: { arguments: { values: [read, confirm, human_only] } } }]
+
+  - name: approvals
+    columns:
+      - { name: approval_id, data_tests: [unique, not_null] }
+      - name: case_id
+        data_tests: [{ relationships: { arguments: { to: ref('cases'), field: case_id } } }]
+
+  - name: signals
+    columns:
+      - { name: signal_id, data_tests: [unique, not_null] }

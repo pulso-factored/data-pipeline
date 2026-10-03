@@ -53,3 +53,11 @@ Otros: `digital_events.customer_id` 24% nulo (sesiones anónimas): se mantienen 
 - `latitude`/`longitude`: solo `atm`, `branch` y `pos` (71,5% nulo dentro de lo aplicable = faltante real).
 - `fraud_score`: ~20% faltante real, uniforme.
 - Transacciones de los 6 productos en cuarentena (74): se conservan, con `product_quarantined = true`.
+
+## Hallazgos al cargar E0 y mapear reclamos al contrato
+
+- E0 cumple `platform_history` v0.5.1 en las 9 tablas de historial (obligatorios, dominios). Los arreglos y JSON llegan serializados como VARCHAR y se parsean en el canónico.
+- `routing_step`: `component_id`, `component_version`, `reason_code`, `policy_rule_id`, `confidence`, `handoff` son 100% nulos (todo parte de una persona en E0). Nulo estructural.
+- Una herramienta `human_only` sin aprobación es válida (regla 7: abono hasta el límite del nivel sin aprobación). Se valida en cambio la consistencia llamada <-> aprobación.
+- El banco usa `resolution_satisfaction` 1-5 y el contrato `csat` 1-4: 516 valores de 5 quedan sin `csat` (se conservan en `csat_raw`).
+- Canónico: 67.095 casos = 2.000 (E0) + 65.095 (banco). `topic` se llena en 34,5% de los casos del banco (coincide con el 36% de COVERAGE.md); `sla_due_at` no existe en `complaints`.

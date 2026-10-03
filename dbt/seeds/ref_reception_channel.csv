@@ -1,0 +1,7 @@
+raw_value,channel,origin
+App,app_chat,customer
+Branch,phone,branch
+Call Center,phone,customer
+Email,email,customer
+Regulator,phone,regulator
+Web,web_chat,customer

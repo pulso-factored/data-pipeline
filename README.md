@@ -10,7 +10,7 @@ Pipeline analítico (arquitectura medallón: bronze, silver, gold) con dbt + Duc
 - Nunca credenciales ni datos reales en el repo. Las credenciales del bucket del reto van por variables de entorno.
 - `labels` de la muestra E0 es solo para el evaluador.
 
-Estado: rebanada 2 lista (silver y cuarentena de customers, products, complaints, transactions y tasas de cambio; incremental probado con fixture sintética).
+Estado: rebanada 3 lista (silver de customers, products, complaints, transactions y tasas; muestra E0 cargada y modelo canónico `platform_history` con `source_system`).
 
 ## Uso local
 
@@ -18,6 +18,7 @@ Estado: rebanada 2 lista (silver y cuarentena de customers, products, complaints
 uv sync
 export PIPELINE_ROOT=/ruta/absoluta/data DATASET_BUCKET=... AWS_ACCESS_KEY_ID=... AWS_SECRET_ACCESS_KEY=...
 uv run python -m pipeline.ingest_bank --tables customers,products,complaints
+uv run python -m pipeline.ingest_e0 --source /ruta/a/pulso_muestra_e0   # snapshot E0; labels van a bronze_eval/
 uv run dbt build --project-dir dbt --profiles-dir dbt
 uv run pytest
 ```

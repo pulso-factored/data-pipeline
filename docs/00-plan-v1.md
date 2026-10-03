@@ -27,6 +27,18 @@ Entregar datos limpios, con contrato y trazables para `agent-core` (read-models 
   - `labels` de E0 en esquema aparte, solo para el evaluador.
   - Catálogo `FieldClassification` (seed): `pii_direct`, `pii_quasi`, `financial`, `untrusted_text`, `public`. Campo sin clasificar = `pii_direct`.
 
+## Modelo canónico (decisión: un solo molde, `source_system`)
+
+E0 no es una fuente aparte con otro esquema: es la muestra del modelo de la plataforma (`platform_history` v0.5.1), construida con datos reales del reto (reclamo, cliente, producto, analista, cargo) más partes generadas (mensajes, herramientas, aprobaciones). Las tres fuentes convergen en ese contrato, en el esquema `canonical`, con `source_system`:
+
+| source_system | Cómo entra |
+|---|---|
+| `e0_sample` | Casi 1:1 (ya está en formato). `customer_id` se resuelve al cliente real del banco por `complaint_id` (el de E0 es un seudónimo `PSN-`, mapeo 1:1 verificado) |
+| `bank_complaints` | Mapeo de `complaints` al contrato (canal/origen, prioridad `critical -> high`, tema solo para las 2 subcategorías de disputa, resolución por texto -> código). Se excluyen los reclamos ya presentes en E0 |
+| `cc_platform` | Pendiente: subconjunto del mismo contrato, según el esquema real del `event_log` |
+
+Campos sin fuente quedan NULL (no se inventan): p. ej. `sla_due_at` en los reclamos del banco; `csat` fuera de 1..4 se anula y se conserva en `csat_raw` (el banco usa 1-5). `labels` y `timeline` viven en `bronze_eval/`, fuera del canónico, y un test impide referenciarlos fuera de `dbt/models/eval/`.
+
 ## Incremental y calidad
 
 - Modelos incrementales por `process_date` con ventana de lookback calibrada con la diferencia observada entre `process_date` y la fecha del evento.
