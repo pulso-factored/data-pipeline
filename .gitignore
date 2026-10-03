@@ -1,0 +1,28 @@
+# Secretos y entorno
+.env
+.env.*
+!.env.example
+profiles.yml
+!profiles.yml.example
+*.pem
+*.key
+
+# Datos y artefactos (nunca al repo)
+data/
+*.duckdb
+*.duckdb.wal
+*.parquet
+*.csv
+!seeds/*.csv
+!tests/fixtures/*.csv
+
+# Python / dbt
+.venv/
+__pycache__/
+*.pyc
+target/
+dbt_packages/
+logs/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
