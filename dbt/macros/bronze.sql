@@ -1,0 +1,8 @@
+{# Lee la capa bronze del banco. Dimensiones: un parquet; hechos: un parquet por partición diaria. #}
+{% macro bronze(table, partitioned=false) -%}
+  {%- if partitioned -%}
+    read_parquet('{{ var("pipeline_root") }}/bronze/bank/{{ table }}/*/*/*/*.parquet', union_by_name=true)
+  {%- else -%}
+    read_parquet('{{ var("pipeline_root") }}/bronze/bank/{{ table }}.parquet', union_by_name=true)
+  {%- endif -%}
+{%- endmacro %}

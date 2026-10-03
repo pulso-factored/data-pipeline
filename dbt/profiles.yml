@@ -1,0 +1,8 @@
+# Sin secretos: solo referencias a variables de entorno.
+data_pipeline:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('PIPELINE_ROOT') }}/warehouse.duckdb"
+      threads: 4

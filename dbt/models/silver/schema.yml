@@ -1,0 +1,71 @@
+version: 2
+
+models:
+  - name: customers
+    description: "Clientes tipados y normalizados. Una fila por customer_id."
+    config:
+      contract: { enforced: true }
+    columns:
+      - { name: customer_id, data_type: varchar, constraints: [{ type: not_null }], data_tests: [unique, not_null] }
+      - { name: document_number, data_type: varchar, data_tests: [unique] }  # pii_direct
+      - { name: document_type, data_type: varchar }
+      - { name: first_name, data_type: varchar }        # pii_direct
+      - { name: last_name, data_type: varchar }         # pii_direct
+      - { name: date_of_birth, data_type: date }        # pii_quasi
+      - { name: gender, data_type: varchar, data_tests: [{ accepted_values: { arguments: { values: [M, F, O] } } }] }
+      - { name: email, data_type: varchar }             # pii_direct
+      - { name: mobile_phone, data_type: varchar }      # pii_direct
+      - { name: landline_phone, data_type: varchar }    # pii_direct
+      - { name: address, data_type: varchar }           # pii_direct
+      - { name: city, data_type: varchar }              # pii_quasi
+      - { name: state, data_type: varchar }
+      - { name: country_iso2, data_type: varchar, data_tests: [{ accepted_values: { arguments: { values: [MX, CO, AR] } } }] }
+      - { name: postal_code, data_type: varchar }       # pii_quasi
+      - { name: detected_accent, data_type: varchar }
+      - { name: segment, data_type: varchar, data_tests: [{ accepted_values: { arguments: { values: [Basic, Plus, Premium, Student] } } }] }
+      - { name: credit_score, data_type: integer }      # financial
+      - { name: estimated_monthly_income, data_type: "decimal(12,2)" }  # financial
+      - { name: occupation, data_type: varchar }
+      - { name: marital_status, data_type: varchar }
+      - { name: education_level, data_type: varchar }
+      - { name: registration_date, data_type: timestamp }
+      - { name: registration_branch_id, data_type: varchar }
+      - { name: customer_status, data_type: varchar, data_tests: [{ accepted_values: { arguments: { values: [Active, Inactive, Suspended, Closed] } } }] }
+      - { name: last_updated, data_type: timestamp }
+      - { name: accepts_marketing, data_type: boolean }
+      - { name: branch_link_valid, data_type: boolean }
+      - { name: is_missing_credit_score, data_type: boolean }
+      - { name: is_missing_income, data_type: boolean }
+      - { name: is_missing_accent, data_type: boolean }
+      - { name: is_missing_email, data_type: boolean }
+      - { name: is_missing_mobile_phone, data_type: boolean }
+      - { name: _batch_id, data_type: varchar }
+      - { name: _source_file, data_type: varchar }
+      - { name: _ingested_at, data_type: timestamp }
+
+  - name: products
+    description: "Productos financieros. Una fila por product_id; product_number único."
+    columns:
+      - { name: product_id, data_tests: [unique, not_null] }
+      - { name: product_number, data_tests: [unique, not_null] }
+      - name: customer_id
+        data_tests:
+          - relationships: { arguments: { to: ref('customers'), field: customer_id } }
+      - name: currency
+        data_tests: [{ accepted_values: { arguments: { values: [USD, COP, ARS] } } }]  # el diccionario dice MXN: no existe en los datos
+      - name: product_status
+        data_tests: [{ accepted_values: { arguments: { values: [Active, Blocked, Closed, Suspended] } } }]
+
+  - name: complaints
+    description: "Reclamos (PQR). Una fila por complaint_id. Los nulos de resolución son de estado (is_open)."
+    columns:
+      - { name: complaint_id, data_tests: [unique, not_null] }
+      - name: customer_id
+        data_tests:
+          - relationships: { arguments: { to: ref('customers'), field: customer_id } }
+      - name: priority
+        data_tests: [{ accepted_values: { arguments: { values: [low, medium, high, critical] } } }]
+      - name: status
+        data_tests: [{ accepted_values: { arguments: { values: [Open, In Process, Escalated, Resolved, Closed, Rejected] } } }]
+      - name: reception_channel
+        data_tests: [{ accepted_values: { arguments: { values: [Call Center, Email, Web, App, Branch, Regulator] } } }]

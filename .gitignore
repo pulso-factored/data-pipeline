@@ -2,8 +2,6 @@
 .env
 .env.*
 !.env.example
-profiles.yml
-!profiles.yml.example
 *.pem
 *.key
 
@@ -13,7 +11,7 @@ data/
 *.duckdb.wal
 *.parquet
 *.csv
-!seeds/*.csv
+!dbt/seeds/*.csv
 !tests/fixtures/*.csv
 
 # Python / dbt

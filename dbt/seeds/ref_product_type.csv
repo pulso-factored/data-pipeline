@@ -1,0 +1,9 @@
+raw_value,canonical,has_credit_limit
+Cuenta Ahorro,savings_account,false
+Cuenta Corriente,checking_account,false
+Tarjeta Crédito,credit_card,true
+Tarjeta Débito,debit_card,false
+Préstamo Personal,personal_loan,true
+Préstamo Hipotecario,mortgage,true
+Inversión,investment,false
+Seguro,insurance,false

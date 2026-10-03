@@ -1,0 +1,25 @@
+name: data_pipeline
+version: "0.1.0"
+config-version: 2
+profile: data_pipeline
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+test-paths: ["tests"]
+
+vars:
+  pipeline_root: "{{ env_var('PIPELINE_ROOT') }}"
+
+models:
+  data_pipeline:
+    silver:
+      +schema: silver
+      +materialized: table
+    quarantine:
+      +schema: quarantine
+      +materialized: table
+
+seeds:
+  data_pipeline:
+    +schema: ref
