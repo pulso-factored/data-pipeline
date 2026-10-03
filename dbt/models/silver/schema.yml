@@ -69,3 +69,24 @@ models:
         data_tests: [{ accepted_values: { arguments: { values: [Open, In Process, Escalated, Resolved, Closed, Rejected] } } }]
       - name: reception_channel
         data_tests: [{ accepted_values: { arguments: { values: [Call Center, Email, Web, App, Branch, Regulator] } } }]
+
+  - name: exchange_rates
+    description: "12 pares x 1.097 días. PK (rate_date, source_currency, target_currency)."
+    columns:
+      - { name: exchange_rate, data_tests: [not_null] }
+
+  - name: transactions
+    description: "Transacciones válidas (vista sobre transactions_checked). amount_usd_source indica si el USD es reportado o derivado."
+    columns:
+      - { name: transaction_id, data_tests: [unique, not_null] }
+      - name: customer_id
+        data_tests:
+          - relationships: { arguments: { to: ref('customers'), field: customer_id } }
+      - name: currency
+        data_tests: [{ accepted_values: { arguments: { values: [USD, COP, ARS] } } }]
+      - name: amount_usd_source
+        data_tests: [{ accepted_values: { arguments: { values: [reported, derived_identity, derived_fx] } } }]
+      - name: transaction_status
+        data_tests: [{ accepted_values: { arguments: { values: [approved, declined, pending, reversed] } } }]
+      - name: channel
+        data_tests: [{ accepted_values: { arguments: { values: [pos, atm, web, app, branch, transfer] } } }]

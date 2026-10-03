@@ -10,7 +10,7 @@ Pipeline analítico (arquitectura medallón: bronze, silver, gold) con dbt + Duc
 - Nunca credenciales ni datos reales en el repo. Las credenciales del bucket del reto van por variables de entorno.
 - `labels` de la muestra E0 es solo para el evaluador.
 
-Estado: rebanada 1 lista (bronze incremental por etag; silver y cuarentena de customers, products, complaints).
+Estado: rebanada 2 lista (silver y cuarentena de customers, products, complaints, transactions y tasas de cambio; incremental probado con fixture sintética).
 
 ## Uso local
 
