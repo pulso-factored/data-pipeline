@@ -41,7 +41,7 @@ Campos sin fuente quedan NULL (no se inventan): p. ej. `sla_due_at` en los recla
 
 ## Incremental y calidad
 
-- Modelos incrementales por `process_date` con ventana de lookback calibrada con la diferencia observada entre `process_date` y la fecha del evento.
+- Modelos incrementales `delete+insert` por `transaction_id` con watermark de ingesta (`_ingested_at`): una partición reingestada por etag nuevo reemplaza sus filas, lo que cubre llegadas tardías y correcciones. `process_date` es la fecha local (UTC-6) y no sirve como watermark.
 - Para datos estáticos, una fixture etiquetada demuestra la corrección del update (lo pide el reto).
 - Tests que fallan si aparecen duplicados o evolución de esquema (hoy no existen).
 - Mart de calidad y frescura: % de cuarentena, nulos por tipo, frescura por fuente.

@@ -30,7 +30,7 @@ def test_labels_never_referenced_outside_eval_zone() -> None:
         code = "\n".join(
             line for line in text.splitlines() if not line.strip().startswith(("--", "#"))
         )
-        code = re.sub(r"\{#.*?#\}", "", code, flags=re.S)
+        code = re.sub(r"\{#.*?#\}", "", code, flags=re.DOTALL)
         if FORBIDDEN.search(code):
             offenders.append(str(p.relative_to(DBT)))
     assert not offenders, f"Referencias a labels/final_* fuera de models/eval: {offenders}"
