@@ -20,6 +20,7 @@ with typed as (
         try_cast(p.last_transaction_date as timestamp)       as last_transaction_date,
         try_cast(p.last_updated as timestamp)                as last_updated,
         coalesce(t.has_credit_limit, false)                  as credit_limit_applicable,
+        (try_cast(p.last_updated as timestamp) > timestamp '{{ var("dataset_cutoff") }}') as is_last_updated_future,
         (p.credit_limit is null or p.credit_limit = '')      as is_missing_credit_limit,
         p._batch_id, p._source_file, p._ingested_at,
         row_number() over (partition by p.product_id order by try_cast(p.last_updated as timestamp) desc nulls last, p._ingested_at desc) as _rn_id,

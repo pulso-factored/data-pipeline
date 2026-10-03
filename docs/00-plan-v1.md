@@ -23,7 +23,7 @@ Entregar datos limpios, con contrato y trazables para `agent-core` (read-models 
 - **Silver:** tipado, dedup por PK, normalización por seeds (países ISO, enums canónicos), política de nulos por campo, cuarentena (`quarantine_<tabla>` con motivo), modelo canónico de caso (`complaints` + E0 + Plataforma CC) alineado con `platform_history` v0.5.1. Contratos dbt (`contract: enforced`) y tests.
 - **Gold:**
   - `gold_restricted`: read-models por cliente con PII en claro y clasificada, solo para tools autenticadas de agent-core.
-  - `gold_analytics`: seudonimizado (HMAC con clave en secretos) para análisis y ML: demanda y motivos, calidad y frescura, splits `arranque`/`reproduccion` sin fuga.
+  - `gold_analytics`: seudonimizado (HMAC-SHA256 con `PSEUDONYM_KEY`, calculado en lote por un modelo Python; el mapa vive en `gold_restricted`) para análisis y ML: demanda y motivos, calidad y frescura, splits `arranque`/`reproduccion` sin fuga.
   - `labels` de E0 en esquema aparte, solo para el evaluador.
   - Catálogo `FieldClassification` (seed): `pii_direct`, `pii_quasi`, `financial`, `untrusted_text`, `public`. Campo sin clasificar = `pii_direct`.
 

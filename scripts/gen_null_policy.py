@@ -1,0 +1,78 @@
+"""Genera dbt/seeds/null_policy.csv a partir de las columnas silver con nulos y las reglas verificadas
+en el perfilado (docs/01-hallazgos-de-calidad.md). Las columnas con nulos y SIN regla se listan al final:
+hay que clasificarlas a mano (el test dq_unexplained_nulls también las detecta)."""
+
+from __future__ import annotations
+
+import csv
+import os
+from pathlib import Path
+
+import duckdb
+
+ROOT = Path(__file__).resolve().parents[1]
+WAREHOUSE = Path(os.environ.get("PIPELINE_ROOT", ROOT / "data")) / "warehouse.duckdb"
+
+# (tabla, columna) -> (tipo, nota). Tipos: structural | state | derivable | missing_real | not_in_source
+RULES: dict[tuple[str, str], tuple[str, str]] = {
+    # customers: opcionales en el diccionario; faltantes reales, nunca se imputan
+    **{("customers", c): ("missing_real", "Opcional en el diccionario. No se imputa; is_missing_* lo expone.")
+       for c in ["email", "mobile_phone", "landline_phone", "address", "postal_code", "detected_accent",
+                 "credit_score", "estimated_monthly_income", "occupation", "marital_status", "education_level"]},
+    # products
+    ("products", "credit_limit"): ("structural", "Solo aplica a tarjeta de crédito y préstamos; dentro de lo aplicable ~5% es faltante real (is_missing_credit_limit)."),
+    ("products", "days_past_due"): ("structural", "Solo aplica a créditos."),
+    ("products", "expiration_date"): ("structural", "Solo productos a plazo."),
+    ("products", "interest_rate"): ("missing_real", "~10% sin tasa."),
+    ("products", "last_transaction_date"): ("state", "Producto sin movimientos todavía."),
+    # complaints
+    ("complaints", "subcategory"): ("missing_real", "~10% sin subcategoría."),
+    ("complaints", "affected_product_id"): ("missing_real", "Reclamo sin producto asociado."),
+    ("complaints", "related_branch_id"): ("missing_real", "Reclamo sin sucursal."),
+    ("complaints", "origin_interaction_id"): ("not_in_source", "100% vacío en el origen: no se puede enlazar llamada y reclamo."),
+    ("complaints", "claimed_amount"): ("missing_real", "Monto reclamado opcional."),
+    ("complaints", "currency"): ("missing_real", "Va con claimed_amount."),
+    **{("complaints", c): ("state", "Aún no ocurrió (caso abierto o sin asignar).")
+       for c in ["assigned_agent_id", "assignment_date", "first_response_date", "resolution_date", "closing_date",
+                 "resolution_days", "resolution", "compensation_granted", "resolution_satisfaction"]},
+    # transactions
+    **{("transactions", c): ("structural", "Solo purchase y payment; ~5% faltante real dentro de lo aplicable.")
+       for c in ["transaction_category", "merchant_name", "merchant_category"]},
+    ("transactions", "branch_id"): ("structural", "Solo atm y branch; ~5% faltante real dentro de lo aplicable."),
+    ("transactions", "latitude"): ("structural", "Solo atm, branch y pos; ~71% faltante real dentro de lo aplicable."),
+    ("transactions", "longitude"): ("structural", "Solo atm, branch y pos; ~71% faltante real dentro de lo aplicable."),
+    ("transactions", "fraud_score"): ("missing_real", "~20% uniforme."),
+    ("transactions", "transaction_city"): ("missing_real", "~10%."),
+    ("transactions", "response_code"): ("missing_real", "~5%."),
+    ("transactions", "amount_usd_reported"): ("derivable", "Se completa en amount_usd (identidad para USD, tasa del día para COP/ARS); ver amount_usd_source."),
+}
+
+TABLES = ["customers", "products", "complaints", "transactions"]
+
+
+def main() -> None:
+    con = duckdb.connect(str(WAREHOUSE), read_only=True)
+    rows, unexplained = [], []
+    for t in TABLES:
+        cols = [r[0] for r in con.execute(f"describe silver.{t}").fetchall() if not r[0].startswith("_")]
+        for c in cols:
+            nulls = con.execute(f'select count(*) - count("{c}") from silver.{t}').fetchone()[0]
+            if nulls == 0:
+                continue
+            rule = RULES.get((t, c))
+            if rule is None:
+                unexplained.append((t, c, nulls))
+                continue
+            rows.append((t, c, rule[0], rule[1]))
+    out = ROOT / "dbt" / "seeds" / "null_policy.csv"
+    with out.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f)
+        w.writerow(["table_name", "column_name", "null_type", "note"])
+        w.writerows(rows)
+    print(f"{len(rows)} reglas escritas en {out}")
+    if unexplained:
+        print("COLUMNAS CON NULOS SIN REGLA:", unexplained)
+
+
+if __name__ == "__main__":
+    main()

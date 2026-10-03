@@ -1,0 +1,42 @@
+table_name,column_name,null_type,note
+customers,email,missing_real,Opcional en el diccionario. No se imputa; is_missing_* lo expone.
+customers,mobile_phone,missing_real,Opcional en el diccionario. No se imputa; is_missing_* lo expone.
+customers,landline_phone,missing_real,Opcional en el diccionario. No se imputa; is_missing_* lo expone.
+customers,address,missing_real,Opcional en el diccionario. No se imputa; is_missing_* lo expone.
+customers,postal_code,missing_real,Opcional en el diccionario. No se imputa; is_missing_* lo expone.
+customers,detected_accent,missing_real,Opcional en el diccionario. No se imputa; is_missing_* lo expone.
+customers,credit_score,missing_real,Opcional en el diccionario. No se imputa; is_missing_* lo expone.
+customers,estimated_monthly_income,missing_real,Opcional en el diccionario. No se imputa; is_missing_* lo expone.
+customers,occupation,missing_real,Opcional en el diccionario. No se imputa; is_missing_* lo expone.
+customers,marital_status,missing_real,Opcional en el diccionario. No se imputa; is_missing_* lo expone.
+customers,education_level,missing_real,Opcional en el diccionario. No se imputa; is_missing_* lo expone.
+products,credit_limit,structural,Solo aplica a tarjeta de crédito y préstamos; dentro de lo aplicable ~5% es faltante real (is_missing_credit_limit).
+products,interest_rate,missing_real,~10% sin tasa.
+products,expiration_date,structural,Solo productos a plazo.
+products,days_past_due,structural,Solo aplica a créditos.
+products,last_transaction_date,state,Producto sin movimientos todavía.
+complaints,subcategory,missing_real,~10% sin subcategoría.
+complaints,affected_product_id,missing_real,Reclamo sin producto asociado.
+complaints,related_branch_id,missing_real,Reclamo sin sucursal.
+complaints,origin_interaction_id,not_in_source,100% vacío en el origen: no se puede enlazar llamada y reclamo.
+complaints,claimed_amount,missing_real,Monto reclamado opcional.
+complaints,currency,missing_real,Va con claimed_amount.
+complaints,assigned_agent_id,state,Aún no ocurrió (caso abierto o sin asignar).
+complaints,assignment_date,state,Aún no ocurrió (caso abierto o sin asignar).
+complaints,first_response_date,state,Aún no ocurrió (caso abierto o sin asignar).
+complaints,resolution_date,state,Aún no ocurrió (caso abierto o sin asignar).
+complaints,closing_date,state,Aún no ocurrió (caso abierto o sin asignar).
+complaints,resolution_days,state,Aún no ocurrió (caso abierto o sin asignar).
+complaints,resolution,state,Aún no ocurrió (caso abierto o sin asignar).
+complaints,compensation_granted,state,Aún no ocurrió (caso abierto o sin asignar).
+complaints,resolution_satisfaction,state,Aún no ocurrió (caso abierto o sin asignar).
+transactions,transaction_category,structural,Solo purchase y payment; ~5% faltante real dentro de lo aplicable.
+transactions,amount_usd_reported,derivable,"Se completa en amount_usd (identidad para USD, tasa del día para COP/ARS); ver amount_usd_source."
+transactions,branch_id,structural,Solo atm y branch; ~5% faltante real dentro de lo aplicable.
+transactions,merchant_name,structural,Solo purchase y payment; ~5% faltante real dentro de lo aplicable.
+transactions,merchant_category,structural,Solo purchase y payment; ~5% faltante real dentro de lo aplicable.
+transactions,transaction_city,missing_real,~10%.
+transactions,response_code,missing_real,~5%.
+transactions,fraud_score,missing_real,~20% uniforme.
+transactions,latitude,structural,"Solo atm, branch y pos; ~71% faltante real dentro de lo aplicable."
+transactions,longitude,structural,"Solo atm, branch y pos; ~71% faltante real dentro de lo aplicable."

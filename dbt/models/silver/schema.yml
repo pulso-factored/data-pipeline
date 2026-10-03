@@ -34,6 +34,7 @@ models:
       - { name: last_updated, data_type: timestamp }
       - { name: accepts_marketing, data_type: boolean }
       - { name: branch_link_valid, data_type: boolean }
+      - { name: is_last_updated_future, data_type: boolean }
       - { name: is_missing_credit_score, data_type: boolean }
       - { name: is_missing_income, data_type: boolean }
       - { name: is_missing_accent, data_type: boolean }

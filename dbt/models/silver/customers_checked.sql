@@ -38,6 +38,7 @@ typed as (
         try_cast(r.last_updated as timestamp)                    as last_updated,
         lower(r.accepts_marketing) = 'true'                      as accepts_marketing,
         (b.branch_id is not null)                                as branch_link_valid,
+        (try_cast(r.last_updated as timestamp) > timestamp '{{ var("dataset_cutoff") }}') as is_last_updated_future,
         (r.credit_score is null or r.credit_score = '')          as is_missing_credit_score,
         (r.estimated_monthly_income is null or r.estimated_monthly_income = '') as is_missing_income,
         (r.detected_accent is null or r.detected_accent = '')    as is_missing_accent,

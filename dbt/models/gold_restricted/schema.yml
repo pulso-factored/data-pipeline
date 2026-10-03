@@ -1,0 +1,36 @@
+version: 2
+
+# gold_restricted: PII en claro y clasificada (ver seed field_classification). Solo para tools autenticadas
+# de agent-core y para el propio pipeline. Una fila por entidad; las tools filtran por customer_id.
+
+models:
+  - name: customer_profile
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+  - name: customer_products
+    columns:
+      - { name: product_id, data_tests: [unique, not_null] }
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships: { arguments: { to: ref('customer_profile'), field: customer_id } }
+  - name: customer_transactions
+    columns:
+      - { name: transaction_id, data_tests: [unique, not_null] }
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships: { arguments: { to: ref('customer_profile'), field: customer_id } }
+  - name: customer_cases
+    columns:
+      - { name: case_id, data_tests: [unique, not_null] }
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships: { arguments: { to: ref('customer_profile'), field: customer_id } }
+  - name: pseudonym_map
+    description: "Permite re-identificar: no se expone a consumidores."
+    columns:
+      - { name: customer_id, data_tests: [unique, not_null] }
+      - { name: customer_pseudo, data_tests: [unique, not_null] }

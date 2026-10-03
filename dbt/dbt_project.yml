@@ -10,6 +10,7 @@ test-paths: ["tests"]
 
 vars:
   pipeline_root: "{{ env_var('PIPELINE_ROOT') }}"
+  dataset_cutoff: "2026-06-18"  # corte del dataset del reto (rango 2023-06-17..2026-06-17, +1 día por huso)
 
 models:
   data_pipeline:
@@ -21,6 +22,12 @@ models:
       +materialized: table
     canonical:
       +schema: canonical
+      +materialized: table
+    gold_restricted:
+      +schema: gold_restricted
+      +materialized: table
+    gold_analytics:
+      +schema: gold_analytics
       +materialized: table
 
 seeds:

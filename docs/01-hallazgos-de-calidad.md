@@ -61,3 +61,10 @@ Otros: `digital_events.customer_id` 24% nulo (sesiones anónimas): se mantienen 
 - Una herramienta `human_only` sin aprobación es válida (regla 7: abono hasta el límite del nivel sin aprobación). Se valida en cambio la consistencia llamada <-> aprobación.
 - El banco usa `resolution_satisfaction` 1-5 y el contrato `csat` 1-4: 516 valores de 5 quedan sin `csat` (se conservan en `csat_raw`).
 - Canónico: 67.095 casos = 2.000 (E0) + 65.095 (banco). `topic` se llena en 34,5% de los casos del banco (coincide con el 36% de COVERAGE.md); `sla_due_at` no existe en `complaints`.
+
+## Hallazgos al construir gold
+
+- **`last_updated` futuro:** 9.316 clientes (6,2%) y 25.113 productos (6,3%) tienen `last_updated` posterior al corte del dataset (2026-06-17), hasta 2027-06-15. Los datos de negocio son válidos: se marcan con `is_last_updated_future`, no se descartan. La frescura de estas tablas usa `registration_date`/`opening_date`. 29 reclamos y la última transacción rozan el corte por el huso (UTC-6).
+- **Nulos:** 41 columnas con nulos, todas con tipo asignado (9 estructurales, 10 de estado, 20 faltantes reales, 1 derivable, 1 no existente en origen). Un test falla si aparece un nulo sin explicar.
+- **Split de reproducción:** el `split`/`replay_rank` derivado de `opened_at` coincide con `labels` en los 2.000 casos (comprobación puntual con acceso privilegiado, fuera del pipeline).
+- **Seudonimización:** el HMAC por fila como función Python dentro de DuckDB tardaba más de 2 min para 150.000 filas; se reemplazó por un modelo Python de dbt en lote (3 s) que deja el mapa en `gold_restricted`.

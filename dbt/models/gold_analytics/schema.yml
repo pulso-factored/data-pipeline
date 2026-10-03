@@ -1,0 +1,23 @@
+version: 2
+
+# gold_analytics: seudonimizado, sin PII directa y sin labels. Para análisis, demanda, calidad y ML.
+
+models:
+  - name: case_facts
+    columns:
+      - { name: case_id, data_tests: [unique, not_null] }
+      - name: customer_pseudo
+        data_tests: [not_null]
+      - name: split
+        data_tests: [{ accepted_values: { arguments: { values: [arranque, reproduccion] } } }]
+  - name: demand_monthly
+    columns:
+      - { name: cases, data_tests: [not_null] }
+  - name: dq_null_profile
+    columns:
+      - name: null_type
+        data_tests:
+          - accepted_values:
+              arguments: { values: [structural, state, derivable, missing_real, not_in_source] }
+  - name: dq_quarantine
+  - name: dq_freshness

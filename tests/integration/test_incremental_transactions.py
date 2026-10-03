@@ -113,7 +113,7 @@ def test_incremental_picks_up_new_partition_and_corrections(root: Path) -> None:
         _tx("C", "2030-01-01 11:00:00", "10.00"),
     ], "2026-01-02 00:00:00")
     _dbt(env, "seed")
-    _dbt(env, "run", "-s", "+transactions_checked+", "--full-refresh")
+    _dbt(env, "run", "-s", "+transactions_checked", "transactions", "q_transactions", "--full-refresh")
 
     con = duckdb.connect(str(root / "warehouse.duckdb"), read_only=True)
     assert con.execute("select count(*) from silver.transactions").fetchone()[0] == 2
@@ -131,7 +131,7 @@ def test_incremental_picks_up_new_partition_and_corrections(root: Path) -> None:
     ], "2026-01-03 00:00:00")
     _write(p2, TX_COLS, [_tx("D", "2026-01-01 13:00:00", "1000000.00", currency="COP")],
            "2026-01-03 00:00:00")
-    _dbt(env, "run", "-s", "transactions_checked+")
+    _dbt(env, "run", "-s", "transactions_checked", "transactions", "q_transactions")
 
     con = duckdb.connect(str(root / "warehouse.duckdb"), read_only=True)
     rows = dict(con.execute("select transaction_id, amount from silver.transactions").fetchall())
