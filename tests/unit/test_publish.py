@@ -11,12 +11,13 @@ import pytest
 from pipeline.publish import PublishError, publish
 
 
-def _warehouse(path: Path, *, analytics_extra: str = "", restricted_extra: str = "") -> Path:
+def _warehouse(path: Path, *, analytics_extra: str = "", restricted_extra: str = "", masked_extra: str = "") -> Path:
     con = duckdb.connect(str(path))
-    con.execute("create schema gold_analytics; create schema gold_restricted")
+    con.execute("create schema gold_analytics; create schema gold_restricted; create schema gold_masked")
     con.execute(f"create table gold_analytics.case_facts as select 'CASE-1' as case_id, 'cus_abc' as customer_pseudo {analytics_extra}")
     con.execute("create table gold_analytics.dq_quarantine as select 'products' as table_name, 'duplicate_product_number' as outcome, 6 as rows")
     con.execute(f"create table gold_restricted.customer_profile as select 'CLI-1' as customer_id, 'Ana' as first_name {restricted_extra}")
+    con.execute(f"create table gold_masked.customer_profile as select 'cus_abc' as customer_pseudo, 'A***' as first_name_masked {masked_extra}")
     con.execute("create table gold_restricted.pseudonym_map as select 'CLI-1' as customer_id, 'cus_abc' as customer_pseudo")
     con.close()
     return path
@@ -27,7 +28,8 @@ def test_publish_separates_artifacts_and_never_ships_the_reidentification_map(tm
     out = publish(wh, tmp_path, "run-test")
 
     assert {p.name for p in out.iterdir()} >= {
-        "gold_analytics.duckdb", "gold_restricted.duckdb", "field_classification.json", "release.json", "parquet"}
+        "gold_analytics.duckdb", "gold_restricted.duckdb", "gold_masked.duckdb", "field_classification.json",
+        "release.json", "parquet"}
     restricted = duckdb.connect(str(out / "gold_restricted.duckdb"), read_only=True)
     tables = {r[0] for r in restricted.execute("select table_name from information_schema.tables where table_schema='gold_restricted'").fetchall()}
     assert tables == {"customer_profile"}  # pseudonym_map NO se publica
@@ -66,3 +68,14 @@ def test_publications_are_immutable(tmp_path: Path) -> None:
     publish(wh, tmp_path, "same")
     with pytest.raises(PublishError, match="inmutables"):
         publish(wh, tmp_path, "same")
+
+
+def test_masked_artifact_is_published_and_guarded(tmp_path: Path) -> None:
+    out = publish(_warehouse(tmp_path / "ok.duckdb"), tmp_path, "run-masked")
+    masked = duckdb.connect(str(out / "gold_masked.duckdb"), read_only=True)
+    cols = {r[0] for r in masked.execute("select column_name from information_schema.columns where table_schema='gold_masked'").fetchall()}
+    assert cols == {"customer_pseudo", "first_name_masked"}
+
+    leaky = _warehouse(tmp_path / "leaky.duckdb", masked_extra=", 'ana@x.com' as email")
+    with pytest.raises(PublishError, match="gold_masked.customer_profile contiene PII directa"):
+        publish(leaky, tmp_path, "run-leaky")

@@ -11,7 +11,7 @@ Pipeline analítico (arquitectura medallón: bronze, silver, gold) con dbt + Duc
 - Nunca credenciales ni datos reales en el repo. Las credenciales del bucket del reto van por variables de entorno.
 - `labels` de la muestra E0 es solo para el evaluador.
 
-Estado: rebanada 5 lista (+ publicación con guardias y runner) (silver, modelo canónico `platform_history`, gold_restricted y gold_analytics, catálogo FieldClassification y marts de calidad). 145 comprobaciones de dbt + 14 tests unitarios.
+Estado: rebanada 5 lista (+ gold_masked, publicación con guardias y runner) (silver, modelo canónico `platform_history`, gold_restricted y gold_analytics, catálogo FieldClassification y marts de calidad). 161 comprobaciones de dbt + 15 tests.
 
 ## Uso local
 

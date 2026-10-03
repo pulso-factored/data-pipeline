@@ -4,6 +4,7 @@ Separar archivos (y, en producción, prefijos S3 con IAM distinto) es lo que imp
 esquema llamado "restricted" dentro de un mismo .duckdb es solo una convención.
 
   publish/<run_id>/gold_analytics.duckdb + parquet/   seudonimizado; para análisis y ML
+  publish/<run_id>/gold_masked.duckdb                 read-models por cliente con PII enmascarada (generado del catálogo)
   publish/<run_id>/gold_restricted.duckdb             PII en claro y clasificada; solo tools autenticadas
   publish/<run_id>/field_classification.json          catálogo para agent-core (--field-classifier)
   publish/<run_id>/release.json                       lineage, hashes y calidad de esta publicación
@@ -30,6 +31,7 @@ from pipeline.export_catalog import build as build_catalog
 
 ANALYTICS_SCHEMA = "gold_analytics"
 RESTRICTED_SCHEMA = "gold_restricted"
+MASKED_SCHEMA = "gold_masked"
 NEVER_PUBLISH_TABLES = {"pseudonym_map"}
 NEVER_PUBLISH_COLUMNS = {"labels", "final_status", "final_resolution_code", "final_resolution_date", "final_sla_breached"}
 
@@ -55,14 +57,15 @@ def tables_of(con: duckdb.DuckDBPyConnection, schema: str) -> list[str]:
 def check_guards(con: duckdb.DuckDBPyConnection, catalog: dict[str, dict[str, Any]]) -> None:
     """Falla cerrado: analytics sin PII directa, nada de labels y toda columna restringida clasificada."""
     direct = {k.split(".")[-1] for k, r in catalog.items() if r["field_class"] == "pii_direct"} - {"customer_pseudo"}
-    for t in tables_of(con, ANALYTICS_SCHEMA):
-        cols = {r[0] for r in con.execute(
-            "select column_name from information_schema.columns where table_schema = ? and table_name = ?",
-            [ANALYTICS_SCHEMA, t]).fetchall()}
-        leaked = cols & direct
-        if leaked:
-            raise PublishError(f"{ANALYTICS_SCHEMA}.{t} contiene PII directa: {sorted(leaked)}")
-    for schema in (ANALYTICS_SCHEMA, RESTRICTED_SCHEMA):
+    for schema in (ANALYTICS_SCHEMA, MASKED_SCHEMA):
+        for t in tables_of(con, schema):
+            cols = {r[0] for r in con.execute(
+                "select column_name from information_schema.columns where table_schema = ? and table_name = ?",
+                [schema, t]).fetchall()}
+            leaked = cols & direct
+            if leaked:
+                raise PublishError(f"{schema}.{t} contiene PII directa: {sorted(leaked)}")
+    for schema in (ANALYTICS_SCHEMA, MASKED_SCHEMA, RESTRICTED_SCHEMA):
         for t in tables_of(con, schema):
             if t in NEVER_PUBLISH_TABLES:
                 continue
@@ -110,6 +113,7 @@ def publish(warehouse: Path, dest_root: Path, run_id: str | None = None) -> Path
 
     analytics_rows = _copy_schema(src, out_dir / "gold_analytics.duckdb", ANALYTICS_SCHEMA, out_dir / "parquet")
     restricted_rows = _copy_schema(src, out_dir / "gold_restricted.duckdb", RESTRICTED_SCHEMA, None)
+    masked_rows = _copy_schema(src, out_dir / "gold_masked.duckdb", MASKED_SCHEMA, None)
     (out_dir / "field_classification.json").write_text(
         json.dumps(catalog, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -130,7 +134,7 @@ def publish(warehouse: Path, dest_root: Path, run_id: str | None = None) -> Path
         "created_at": datetime.now(UTC).isoformat(),
         "git_sha": git_sha,
         "contracts": {"platform_history": "0.5.1"},
-        "rows": {ANALYTICS_SCHEMA: analytics_rows, RESTRICTED_SCHEMA: restricted_rows},
+        "rows": {ANALYTICS_SCHEMA: analytics_rows, MASKED_SCHEMA: masked_rows, RESTRICTED_SCHEMA: restricted_rows},
         "quarantine": [{"table": t, "reason": r, "rows": n} for t, r, n in dq],
         "never_published": sorted(NEVER_PUBLISH_TABLES) + ["labels", "timeline", "bronze"],
         "artifacts_sha256": artifacts,

@@ -29,6 +29,9 @@ models:
     gold_analytics:
       +schema: gold_analytics
       +materialized: table
+    gold_masked:
+      +schema: gold_masked
+      +materialized: table
 
 seeds:
   data_pipeline:

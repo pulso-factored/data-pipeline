@@ -22,6 +22,7 @@ El enforcement de políticas de negocio es de runtime, no de la ETL (docs de age
 | Seudonimización | HMAC-SHA256 con `PSEUDONYM_KEY`, calculado en lote. La clave no pasa por SQL, `target/` ni logs. Mapa de re-identificación en `gold_restricted`, **nunca publicado** | `pseudonym_map.py`, `test_publish.py` |
 | Separación física de artefactos | `gold_analytics.duckdb` y `gold_restricted.duckdb` distintos; publicaciones inmutables; `latest.json` se conmuta al final | `test_publish.py` |
 | Zona del evaluador | `labels`/`timeline` en `bronze_eval/`; test impide referenciarlos fuera de `dbt/models/eval/`; el publish bloquea campos `final_*` | `test_no_label_leak.py`, `publish.check_guards` |
+| Enmascarado para consumidores sin `agent-core` | `gold_masked`: read-models por cliente con PII parcial, **generados desde el mismo catálogo** (macro `masked_select`): nombre `R***`, documento/teléfono `***8972`, email `r***@***`, fecha de nacimiento -> rango de 10 años, casi-identificadores eliminados, texto libre con emails y números limpiados, cliente -> `customer_pseudo`. Columnas enmascaradas con sufijo `_masked` para que la guardia verifique por nombre | `masked_values_do_not_leak`, `test_publish.py`, `scripts/verify_masking.py` |
 | Texto libre (`untrusted_text`) identificado | Clase propia en el catálogo (8 columnas) para que M7 lo delimite y tokenice | catálogo |
 | Barrido de PII en texto libre | Emails y secuencias de 6+ dígitos en `turns.text`, preguntas/respuestas del copiloto, notas y reclamos. Hoy: 0 hallazgos (aviso, no bloqueo) | `untrusted_text_pii_scan` |
 | Sin secretos ni datos en git | Historial revisado: 0 coincidencias de claves/bucket. `data/`, `*.duckdb`, `*.parquet` ignorados. Fixtures sintéticas | auditoría 2026-10-03 |
@@ -47,6 +48,7 @@ Decisión consciente: `customer_id` es `pii_direct` (el modelo ve un token, no e
 |---|---|---|
 | `bronze/` | solo el pipeline | copia fiel, incluye PII y texto sin tratar |
 | `gold_restricted.duckdb` | tools autenticadas de agent-core | PII en claro y clasificada |
+| `gold_masked.duckdb` | consumidores de datos por cliente que no pasan por agent-core | PII parcial e irreversible; enlazable con analytics por `customer_pseudo` |
 | `gold_analytics.duckdb` + parquet | análisis, ML, tablero | seudonimizado, sin labels |
 | `pseudonym_map` | solo el pipeline | permite re-identificar; no se publica |
 | `bronze_eval/` | solo el evaluador | respuestas y resultados posteriores al contacto |
@@ -60,5 +62,6 @@ Decisión consciente: `customer_id` es `pii_direct` (el modelo ve un token, no e
 4. **Auditoría de acceso:** el pipeline registra qué publicó, no quién leyó. Requiere logs de acceso de S3 y CloudTrail de eventos de datos.
 5. **PII en texto libre:** el barrido detecta emails y números, **no nombres propios** (mismo límite que el detector de M7). Los datos actuales son plantillas y marcadores; con texto real habría que reevaluar.
 6. **Alcance del catálogo:** cubre silver base, canonical y gold_restricted. Faltan las tablas de hechos aún no cargadas (transcripts, encuestas, `digital_events`, `campaign_sends`), que traen texto libre y IP/UTM.
-7. **Enmascaramiento propio de la ETL:** no hay vistas enmascaradas en el warehouse. Se asume que el único consumidor de `gold_restricted` es M7, que enmascara en runtime. Si alguien consulta ese artefacto directamente, ve PII.
+7. **Enmascaramiento propio de la ETL (cubierto parcialmente):** existe `gold_masked`, pero `gold_restricted` sigue en claro y depende de que solo M7 y el pipeline lo lean (ver brecha 1). Las técnicas no son intercambiables: seudonimizar es reversible con la clave (analytics), enmascarar no lo es (masked) y tokenizar en runtime lo hace M7. Si se migra a un motor con políticas de columna (Snowflake, Unity Catalog, Postgres con RLS), las copias se reemplazan por una sola tabla con políticas generadas del mismo catálogo.
+7b. **Límites del enmascarado:** `age_bucket`, país, segmento y estado del cliente son cuasi-identificadores que siguen visibles; el riesgo de reidentificación por combinación no se ha medido (no hay k-anonimato calculado).
 8. **Términos de uso del reto:** la muestra E0 es "solo para participantes, no publicar". El repo no contiene datos de E0 ni del banco (solo 5 frases genéricas de resolución como seed de mapeo); antes de hacerlo público hay que revisar los seeds contra esos términos.

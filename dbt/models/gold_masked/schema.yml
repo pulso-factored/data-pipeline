@@ -1,0 +1,21 @@
+version: 2
+
+# gold_masked: read-models por cliente con PII enmascarada, generados desde field_classification
+# (macro masked_select). Para consumidores que no pasan por agent-core. El cliente aparece como customer_pseudo.
+
+models:
+  - name: masked_customer_profile
+    columns:
+      - { name: customer_pseudo, data_tests: [unique, not_null] }
+  - name: masked_customer_products
+    columns:
+      - { name: product_id, data_tests: [unique, not_null] }
+      - { name: customer_pseudo, data_tests: [not_null] }
+  - name: masked_customer_transactions
+    columns:
+      - { name: transaction_id, data_tests: [unique, not_null] }
+      - { name: customer_pseudo, data_tests: [not_null] }
+  - name: masked_customer_cases
+    columns:
+      - { name: case_id, data_tests: [unique, not_null] }
+      - { name: customer_pseudo, data_tests: [not_null] }
