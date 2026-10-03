@@ -24,3 +24,6 @@ logs/
 .pytest_cache/
 .ruff_cache/
 .mypy_cache/
+
+# dbt local
+.user.yml
