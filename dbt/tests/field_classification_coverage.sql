@@ -8,5 +8,5 @@ left join {{ ref('field_classification') }} f
   on f.schema_name = c.table_schema and f.table_name = c.table_name and f.column_name = c.column_name
 where t.table_type = 'BASE TABLE'
   and (c.table_schema in ('canonical', 'gold_restricted')
-       or (c.table_schema = 'silver' and c.table_name in ('customers', 'products', 'complaints', 'transactions', 'exchange_rates', 'service_agents', 'interactions', 'call_transcripts')))
+       or (c.table_schema = 'silver' and c.table_name in ('customers', 'products', 'complaints', 'transactions', 'exchange_rates', 'service_agents', 'interactions', 'call_transcripts', 'satisfaction_surveys')))
   and f.column_name is null

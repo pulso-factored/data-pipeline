@@ -120,3 +120,13 @@ models:
         data_tests:
           - not_null
           - relationships: { arguments: { to: ref('interactions'), field: interaction_id } }
+
+  - name: satisfaction_surveys
+    description: "Encuestas CSAT/NPS/CES. Escalas observadas: CSAT 1-4, NPS 2-7, CES 1-4 (el diccionario dice 1-5 y 0-10)."
+    columns:
+      - { name: survey_id, data_tests: [unique, not_null] }
+      - name: customer_id
+        data_tests:
+          - relationships: { arguments: { to: ref('customers'), field: customer_id } }
+      - name: survey_type
+        data_tests: [{ accepted_values: { arguments: { values: [CSAT, NPS, CES] } } }]

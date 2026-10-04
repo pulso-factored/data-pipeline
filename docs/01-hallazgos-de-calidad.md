@@ -78,3 +78,10 @@ Otros: `digital_events.customer_id` 24% nulo (sesiones anónimas): se mantienen 
 - **`service_agents.employee_code`:** 13 códigos compartidos por agentes distintos (declarado `UNIQUE NOT NULL` en el diccionario), que afectan a ~15.8K interacciones. Se marcan con `employee_code_is_duplicated`; no se descartan.
 - **Canónico:** 753.216 casos (2.000 E0 + 65.095 reclamos + 686.121 interacciones). Las interacciones entran con `topic`, `priority`, `sla_due_at` y `complaint_id` nulos (sin fuente); `origin` nulo en las 102.544 llamadas salientes (el contrato no tiene "iniciado por el banco"). Solo las llamadas y el video tienen `case_close` (589.903): sin duración no hay hora de cierre. `routing_step.outcome` es una aproximación desde `was_escalated` y `was_resolved`.
 - **Evidencia de demanda:** la resolución en el primer contacto varía por motivo, 91,5% en Transaccional y 43,6% en Queja, mientras el escalamiento es ~10% en todos. Ver `gold_analytics.contact_reasons_monthly`.
+
+## Hallazgos al cargar satisfaction_surveys
+
+- **Volumen:** 212.759 encuestas (doc 250.000). 10 con fecha fuera de rango y 40 de interacciones en cuarentena: 212.709 válidas. Sin duplicados.
+- **Escalas observadas:** CSAT 1-4 (que coincide con el contrato `csat`, 1-4), NPS 2-7 (doc 0-10), CES 1-4. No hay NPS 0-10 comparable.
+- **Nulos:** `nps_category` solo existe en NPS (estructural); preguntas 1-3 sin responder ~43% / ~62% / ~81%; solo 13 comentarios abiertos distintos (plantillas).
+- **`csat` en el modelo canónico:** 109.954 de las 589.903 interacciones con cierre (18,6%) reciben el CSAT más reciente de su encuesta. Los CSAT promedio por motivo: Transaccional 2,91, Producto 2,89, Técnico 2,70, Comercial 2,66, Retención 2,61, Queja 2,44.

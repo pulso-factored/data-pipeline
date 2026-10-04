@@ -33,7 +33,7 @@ FINANCIAL = {
 UNTRUSTED = {
     "description", "complaint_description", "resolution", "text", "question_text", "answer",
     "decision_note", "requester_note", "full_text", "customer_text", "agent_text", "mentioned_entities",
-    "detected_keywords",
+    "detected_keywords", "open_comments",
 }
 # Tags de los tokens (⟦tag:n⟧) y generalización de pii_quasi, según agent_core.views.classification.
 TAGS = {
@@ -45,7 +45,7 @@ TAGS = {
 QUASI_RULES = {"date_of_birth": ("age_bucket", 10)}  # el resto de pii_quasi se elimina (drop)
 SCOPE = [("silver", t) for t in (
     "customers", "products", "complaints", "transactions", "exchange_rates", "service_agents", "interactions",
-    "call_transcripts")]
+    "call_transcripts", "satisfaction_surveys")]
 
 
 def classify(column: str) -> str:

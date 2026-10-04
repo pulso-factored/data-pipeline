@@ -12,6 +12,7 @@ with texts as (
     union all select 'call_transcripts.customer_text', customer_text from {{ ref('call_transcripts') }}
     union all select 'call_transcripts.agent_text', agent_text from {{ ref('call_transcripts') }}
     union all select 'call_transcripts.mentioned_entities', mentioned_entities from {{ ref('call_transcripts') }}
+    union all select 'satisfaction_surveys.open_comments', open_comments from {{ ref('satisfaction_surveys') }}
 )
 select field, count(*) as rows_with_pii
 from texts

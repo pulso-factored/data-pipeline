@@ -54,13 +54,18 @@ RULES: dict[tuple[str, str], tuple[str, str]] = {
     **{("call_transcripts", c): ("missing_real", "Metadato del transcriptor opcional.")
        for c in ["detected_accent", "accent_confidence", "detected_keywords", "mentioned_entities", "detected_intents",
                  "audio_quality", "duration_seconds"]},
+    # satisfaction_surveys
+    ("satisfaction_surveys", "nps_category"): ("structural", "Solo las encuestas NPS; ~5% faltante real dentro de NPS."),
+    **{("satisfaction_surveys", c): ("missing_real", "Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).")
+       for c in ["question_1_text", "question_1_response", "question_2_text", "question_2_response", "question_3_text",
+                 "question_3_response", "open_comments", "comment_sentiment", "campaign_response_rate"]},
     # service_agents
     **{("service_agents", c): ("missing_real", "Opcional en el diccionario.")
        for c in ["phone", "assigned_branch_id", "specialty", "avg_csat", "total_monthly_interactions"]},
     ("transactions", "amount_usd_reported"): ("derivable", "Se completa en amount_usd (identidad para USD, tasa del día para COP/ARS); ver amount_usd_source."),
 }
 
-TABLES = ["customers", "products", "complaints", "transactions", "interactions", "call_transcripts", "service_agents"]
+TABLES = ["customers", "products", "complaints", "transactions", "interactions", "call_transcripts", "service_agents", "satisfaction_surveys"]
 
 
 def main() -> None:

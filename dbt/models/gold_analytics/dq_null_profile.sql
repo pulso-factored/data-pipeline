@@ -8,6 +8,7 @@ with profile as (
     union all {{ null_profile('interactions') }}
     union all {{ null_profile('service_agents') }}
     union all {{ null_profile('call_transcripts') }}
+    union all {{ null_profile('satisfaction_surveys') }}
 )
 select
     p.table_name, p.column_name, p.total_rows, p.null_rows,

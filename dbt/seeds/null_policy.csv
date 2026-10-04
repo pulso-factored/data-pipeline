@@ -57,3 +57,13 @@ service_agents,assigned_branch_id,missing_real,Opcional en el diccionario.
 service_agents,specialty,missing_real,Opcional en el diccionario.
 service_agents,avg_csat,missing_real,Opcional en el diccionario.
 service_agents,total_monthly_interactions,missing_real,Opcional en el diccionario.
+satisfaction_surveys,nps_category,structural,Solo las encuestas NPS; ~5% faltante real dentro de NPS.
+satisfaction_surveys,question_1_text,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).
+satisfaction_surveys,question_1_response,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).
+satisfaction_surveys,question_2_text,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).
+satisfaction_surveys,question_2_response,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).
+satisfaction_surveys,question_3_text,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).
+satisfaction_surveys,question_3_response,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).
+satisfaction_surveys,open_comments,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).
+satisfaction_surveys,comment_sentiment,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).
+satisfaction_surveys,campaign_response_rate,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).

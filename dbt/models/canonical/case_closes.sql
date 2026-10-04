@@ -35,8 +35,14 @@ select
     i.contact_reason,
     cast(null as varchar)                            as resolution_code,
     cast(null as timestamp)                          as followup_at,
-    cast(null as integer)                            as csat,
-    cast(null as integer)                            as csat_raw,
+    case when s.csat between 1 and 4 then s.csat end as csat,
+    s.csat                                           as csat_raw,
     'bank_interactions'                              as source_system
 from {{ ref('interactions') }} i
+left join (
+    select interaction_id, max_by(main_score, survey_ts) as csat
+    from {{ ref('satisfaction_surveys') }}
+    where survey_type = 'CSAT' and interaction_id is not null
+    group by 1
+) s on s.interaction_id = i.interaction_id
 where i.duration_seconds is not null  -- sin duración no hay hora de cierre (contrato: closed_at obligatorio)
