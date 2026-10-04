@@ -9,6 +9,9 @@ with texts as (
     union all select 'approvals.decision_note', decision_note from {{ ref('approvals') }}
     union all select 'complaints.description', description from {{ ref('complaints') }}
     union all select 'complaints.resolution', resolution from {{ ref('complaints') }}
+    union all select 'call_transcripts.customer_text', customer_text from {{ ref('call_transcripts') }}
+    union all select 'call_transcripts.agent_text', agent_text from {{ ref('call_transcripts') }}
+    union all select 'call_transcripts.mentioned_entities', mentioned_entities from {{ ref('call_transcripts') }}
 )
 select field, count(*) as rows_with_pii
 from texts

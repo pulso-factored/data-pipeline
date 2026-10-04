@@ -91,3 +91,32 @@ models:
         data_tests: [{ accepted_values: { arguments: { values: [approved, declined, pending, reversed] } } }]
       - name: channel
         data_tests: [{ accepted_values: { arguments: { values: [pos, atm, web, app, branch, transfer] } } }]
+
+  - name: service_agents
+    columns:
+      - { name: agent_id, data_tests: [unique, not_null] }
+
+  - name: interactions
+    description: "Interacciones del call center (call_center_interactions). contact_reason == reason_category."
+    columns:
+      - { name: interaction_id, data_tests: [unique, not_null] }
+      - name: customer_id
+        data_tests:
+          - relationships: { arguments: { to: ref('customers'), field: customer_id } }
+      - name: agent_id
+        data_tests:
+          - relationships: { arguments: { to: ref('service_agents'), field: agent_id } }
+      - name: channel
+        data_tests: [{ accepted_values: { arguments: { values: [Phone, Email, App, WhatsApp, Web Chat, Web] } } }]
+      - name: interaction_type
+        data_tests: [{ accepted_values: { arguments: { values: [Inbound Call, Outbound Call, Chat, Email, Video] } } }]
+      - name: contact_reason
+        data_tests: [{ accepted_values: { arguments: { values: [Transaccional, Producto, Queja, Técnico, Comercial, Retención] } } }]
+
+  - name: call_transcripts
+    columns:
+      - { name: transcript_id, data_tests: [unique, not_null] }
+      - name: interaction_id
+        data_tests:
+          - not_null
+          - relationships: { arguments: { to: ref('interactions'), field: interaction_id } }

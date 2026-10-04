@@ -2,3 +2,5 @@
 select * from {{ ref('stg_e0_case') }}
 union all by name
 select * from {{ ref('stg_bank_case') }}
+union all by name
+select * from {{ ref('stg_bank_interaction_case') }}

@@ -4,6 +4,8 @@ with all_rows as (
     union all select 'products', quarantine_reason from {{ ref('products_checked') }}
     union all select 'complaints', quarantine_reason from {{ ref('complaints_checked') }}
     union all select 'transactions', quarantine_reason from {{ ref('transactions_checked') }}
+    union all select 'interactions', quarantine_reason from {{ ref('interactions_checked') }}
+    union all select 'call_transcripts', quarantine_reason from {{ ref('call_transcripts_checked') }}
 )
 select
     table_name,

@@ -44,10 +44,23 @@ RULES: dict[tuple[str, str], tuple[str, str]] = {
     ("transactions", "fraud_score"): ("missing_real", "~20% uniforme."),
     ("transactions", "transaction_city"): ("missing_real", "~10%."),
     ("transactions", "response_code"): ("missing_real", "~5%."),
+    # interactions: duración y espera dependen del tipo de contacto
+    ("interactions", "duration_seconds"): ("structural", "Solo llamadas y video; chat y email no tienen duración (0% faltante dentro de lo aplicable)."),
+    ("interactions", "wait_time_seconds"): ("structural", "Solo llamadas entrantes (0% faltante dentro de lo aplicable)."),
+    ("interactions", "customer_detected_accent"): ("missing_real", "~30% uniforme en todos los canales."),
+    ("interactions", "agent_used_accent"): ("missing_real", "~30% uniforme en todos los canales."),
+    ("interactions", "mentioned_products"): ("missing_real", "~60%; la ausencia puede significar que no se mencionó ningún producto."),
+    # call_transcripts: 42 plantillas con marcadores sin rellenar; la intención detectada es siempre consulta_general
+    **{("call_transcripts", c): ("missing_real", "Metadato del transcriptor opcional.")
+       for c in ["detected_accent", "accent_confidence", "detected_keywords", "mentioned_entities", "detected_intents",
+                 "audio_quality", "duration_seconds"]},
+    # service_agents
+    **{("service_agents", c): ("missing_real", "Opcional en el diccionario.")
+       for c in ["phone", "assigned_branch_id", "specialty", "avg_csat", "total_monthly_interactions"]},
     ("transactions", "amount_usd_reported"): ("derivable", "Se completa en amount_usd (identidad para USD, tasa del día para COP/ARS); ver amount_usd_source."),
 }
 
-TABLES = ["customers", "products", "complaints", "transactions"]
+TABLES = ["customers", "products", "complaints", "transactions", "interactions", "call_transcripts", "service_agents"]
 
 
 def main() -> None:

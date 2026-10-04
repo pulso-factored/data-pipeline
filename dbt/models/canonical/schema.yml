@@ -17,7 +17,7 @@ models:
           - unique
           - relationships: { arguments: { to: ref('complaints'), field: complaint_id } }
       - name: source_system
-        data_tests: [{ accepted_values: { arguments: { values: [e0_sample, bank_complaints] } } }]
+        data_tests: [{ accepted_values: { arguments: { values: [e0_sample, bank_complaints, bank_interactions] } } }]
       - name: channel
         data_tests: [{ accepted_values: { arguments: { values: [app_chat, web_chat, whatsapp, phone, email, video] } } }]
       - name: origin

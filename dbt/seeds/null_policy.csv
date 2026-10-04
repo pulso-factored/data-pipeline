@@ -40,3 +40,20 @@ transactions,response_code,missing_real,~5%.
 transactions,fraud_score,missing_real,~20% uniforme.
 transactions,latitude,structural,"Solo atm, branch y pos; ~71% faltante real dentro de lo aplicable."
 transactions,longitude,structural,"Solo atm, branch y pos; ~71% faltante real dentro de lo aplicable."
+interactions,duration_seconds,structural,Solo llamadas y video; chat y email no tienen duración (0% faltante dentro de lo aplicable).
+interactions,wait_time_seconds,structural,Solo llamadas entrantes (0% faltante dentro de lo aplicable).
+interactions,customer_detected_accent,missing_real,~30% uniforme en todos los canales.
+interactions,agent_used_accent,missing_real,~30% uniforme en todos los canales.
+interactions,mentioned_products,missing_real,~60%; la ausencia puede significar que no se mencionó ningún producto.
+call_transcripts,detected_accent,missing_real,Metadato del transcriptor opcional.
+call_transcripts,accent_confidence,missing_real,Metadato del transcriptor opcional.
+call_transcripts,detected_keywords,missing_real,Metadato del transcriptor opcional.
+call_transcripts,mentioned_entities,missing_real,Metadato del transcriptor opcional.
+call_transcripts,detected_intents,missing_real,Metadato del transcriptor opcional.
+call_transcripts,audio_quality,missing_real,Metadato del transcriptor opcional.
+call_transcripts,duration_seconds,missing_real,Metadato del transcriptor opcional.
+service_agents,phone,missing_real,Opcional en el diccionario.
+service_agents,assigned_branch_id,missing_real,Opcional en el diccionario.
+service_agents,specialty,missing_real,Opcional en el diccionario.
+service_agents,avg_csat,missing_real,Opcional en el diccionario.
+service_agents,total_monthly_interactions,missing_real,Opcional en el diccionario.

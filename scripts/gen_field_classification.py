@@ -14,14 +14,15 @@ ROOT = Path(__file__).resolve().parents[1]
 WAREHOUSE = Path(os.environ.get("PIPELINE_ROOT", ROOT / "data")) / "warehouse.duckdb"
 
 PII_DIRECT = {
-    "customer_id", "source_customer_id", "document_number", "first_name", "last_name", "email",
+    "customer_id", "source_customer_id", "document_number", "phone", "employee_code", "first_name", "last_name", "email",
     "mobile_phone", "landline_phone", "address", "product_number", "customer_pseudo",
 }
 PII_QUASI = {
     "date_of_birth", "gender", "city", "state", "postal_code", "transaction_city", "latitude",
     "longitude", "occupation", "marital_status", "education_level", "registration_date",
     "detected_accent", "assigned_analyst_id", "assigned_agent_id", "actor_id", "analyst_id",
-    "author_id", "requested_by_id", "decided_by", "branch_id", "opening_branch_id",
+    "author_id", "requested_by_id", "decided_by", "branch_id", "opening_branch_id", "agent_id",
+    "customer_detected_accent", "agent_used_accent", "native_accent", "country_of_origin_iso2", "hire_date",
     "registration_branch_id", "related_branch_id",
 }
 FINANCIAL = {
@@ -31,16 +32,20 @@ FINANCIAL = {
 }
 UNTRUSTED = {
     "description", "complaint_description", "resolution", "text", "question_text", "answer",
-    "decision_note", "requester_note",
+    "decision_note", "requester_note", "full_text", "customer_text", "agent_text", "mentioned_entities",
+    "detected_keywords",
 }
 # Tags de los tokens (⟦tag:n⟧) y generalización de pii_quasi, según agent_core.views.classification.
 TAGS = {
     "first_name": "name", "last_name": "name", "document_number": "doc", "email": "email",
     "mobile_phone": "tel", "landline_phone": "tel", "address": "addr", "product_number": "prod",
     "customer_id": "cus", "source_customer_id": "cus", "customer_pseudo": "cus",
+    "phone": "tel", "employee_code": "emp",
 }
 QUASI_RULES = {"date_of_birth": ("age_bucket", 10)}  # el resto de pii_quasi se elimina (drop)
-SCOPE = [("silver", t) for t in ("customers", "products", "complaints", "transactions", "exchange_rates")]
+SCOPE = [("silver", t) for t in (
+    "customers", "products", "complaints", "transactions", "exchange_rates", "service_agents", "interactions",
+    "call_transcripts")]
 
 
 def classify(column: str) -> str:

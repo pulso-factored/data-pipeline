@@ -68,3 +68,13 @@ Otros: `digital_events.customer_id` 24% nulo (sesiones anónimas): se mantienen 
 - **Nulos:** 41 columnas con nulos, todas con tipo asignado (9 estructurales, 10 de estado, 20 faltantes reales, 1 derivable, 1 no existente en origen). Un test falla si aparece un nulo sin explicar.
 - **Split de reproducción:** el `split`/`replay_rank` derivado de `opened_at` coincide con `labels` en los 2.000 casos (comprobación puntual con acceso privilegiado, fuera del pipeline).
 - **Seudonimización:** el HMAC por fila como función Python dentro de DuckDB tardaba más de 2 min para 150.000 filas; se reemplazó por un modelo Python de dbt en lote (3 s) que deja el mapa en `gold_restricted`.
+
+## Hallazgos al cargar call_center_interactions y call_transcripts
+
+- **Volumen:** 686.296 interacciones (doc 800.000) y 171.321 transcripciones (doc 200.000). 175 interacciones con fecha fuera de rango van a cuarentena y, con ellas, 44 transcripciones huérfanas. Sin duplicados.
+- **Nulos estructurales (el "14% y 30%" era estructural):** `duration_seconds` existe solo en llamadas y video (chat y email no tienen); `wait_time_seconds` solo en llamadas entrantes. Dentro de lo aplicable no falta ninguno (0%). Un test lo comprueba.
+- **Faltantes reales:** `customer_detected_accent` y `agent_used_accent` ~30% de forma uniforme en todos los canales; `mentioned_products` ~60%.
+- **Transcripciones con poco valor analítico:** 42 textos distintos de cliente y de agente, marcadores `{...}` sin rellenar en el 100% de las filas, idioma siempre `es` e intención detectada siempre `consulta_general`. No se convierten en `turn` del contrato: no traen hora por mensaje (`turn.event_time` es obligatorio).
+- **`service_agents.employee_code`:** 13 códigos compartidos por agentes distintos (declarado `UNIQUE NOT NULL` en el diccionario), que afectan a ~15.8K interacciones. Se marcan con `employee_code_is_duplicated`; no se descartan.
+- **Canónico:** 753.216 casos (2.000 E0 + 65.095 reclamos + 686.121 interacciones). Las interacciones entran con `topic`, `priority`, `sla_due_at` y `complaint_id` nulos (sin fuente); `origin` nulo en las 102.544 llamadas salientes (el contrato no tiene "iniciado por el banco"). Solo las llamadas y el video tienen `case_close` (589.903): sin duración no hay hora de cierre. `routing_step.outcome` es una aproximación desde `was_escalated` y `was_resolved`.
+- **Evidencia de demanda:** la resolución en el primer contacto varía por motivo, 91,5% en Transaccional y 43,6% en Queja, mientras el escalamiento es ~10% en todos. Ver `gold_analytics.contact_reasons_monthly`.

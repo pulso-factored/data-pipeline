@@ -4,4 +4,5 @@ select 'customers' as source_table, max(registration_date) as latest_business_ts
 union all select 'products', cast(max(opening_date) as timestamp), max(_ingested_at), count(*) from {{ ref('products') }}
 union all select 'complaints', max(creation_date), max(_ingested_at), count(*) from {{ ref('complaints') }}
 union all select 'transactions', max(transaction_ts), max(_ingested_at), count(*) from {{ ref('transactions') }}
+union all select 'interactions', max(interaction_ts), max(_ingested_at), count(*) from {{ ref('interactions') }}
 union all select 'e0_cases', max(opened_at), max(_ingested_at), count(*) from {{ ref('stg_e0_case') }}

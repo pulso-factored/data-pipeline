@@ -5,6 +5,9 @@ with profile as (
     union all {{ null_profile('products') }}
     union all {{ null_profile('complaints') }}
     union all {{ null_profile('transactions') }}
+    union all {{ null_profile('interactions') }}
+    union all {{ null_profile('service_agents') }}
+    union all {{ null_profile('call_transcripts') }}
 )
 select
     p.table_name, p.column_name, p.total_rows, p.null_rows,

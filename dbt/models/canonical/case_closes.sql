@@ -24,3 +24,19 @@ from {{ ref('complaints') }} c
 left join {{ ref('ref_resolution_code') }} r on r.raw_value = c.resolution
 where coalesce(c.closing_date, c.resolution_date) is not null
   and c.complaint_id not in (select complaint_id from {{ bronze_e0('case') }})
+
+union all by name
+
+select
+    i.interaction_id                                 as case_id,
+    i.interaction_ts + to_seconds(i.duration_seconds) as closed_at,
+    'analyst'                                        as closed_by_role,
+    i.was_resolved                                   as resolved,
+    i.contact_reason,
+    cast(null as varchar)                            as resolution_code,
+    cast(null as timestamp)                          as followup_at,
+    cast(null as integer)                            as csat,
+    cast(null as integer)                            as csat_raw,
+    'bank_interactions'                              as source_system
+from {{ ref('interactions') }} i
+where i.duration_seconds is not null  -- sin duración no hay hora de cierre (contrato: closed_at obligatorio)

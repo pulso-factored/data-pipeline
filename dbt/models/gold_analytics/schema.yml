@@ -13,6 +13,9 @@ models:
   - name: demand_monthly
     columns:
       - { name: cases, data_tests: [not_null] }
+  - name: contact_reasons_monthly
+    columns:
+      - { name: contacts, data_tests: [not_null] }
   - name: dq_null_profile
     columns:
       - name: null_type

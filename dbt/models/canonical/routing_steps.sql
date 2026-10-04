@@ -12,3 +12,23 @@ select
     cast(handoff as json) as handoff,
     'e0_sample'                                      as source_system
 from {{ bronze_e0('routing_step') }}
+
+union all by name
+
+select
+    i.interaction_id                                 as step_id,
+    i.interaction_id                                 as case_id,
+    i.interaction_ts                                 as event_time,
+    'human'                                          as tier,
+    cast(null as varchar)                            as component_id,
+    cast(null as varchar)                            as component_version,
+    -- Aproximación documentada (COVERAGE.md): was_escalated = la analista lo pasó a una supervisora; no se sabe
+    -- por qué ni qué hizo después. Un contacto no resuelto ni escalado se registra como mitigated.
+    case when i.was_escalated then 'handed_off' when i.was_resolved then 'resolved' else 'mitigated' end as outcome,
+    cast(null as varchar)                            as reason_code,
+    cast(null as varchar)                            as policy_rule_id,
+    cast(null as double)                             as confidence,
+    cast(null as varchar[])                          as inputs_used,
+    cast(null as json)                               as handoff,
+    'bank_interactions'                              as source_system
+from {{ ref('interactions') }} i
