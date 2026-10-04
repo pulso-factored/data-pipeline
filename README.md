@@ -24,3 +24,15 @@ uv run dbt build --project-dir dbt --profiles-dir dbt
 uv run python -m pipeline.publish   # artefactos separados + release.json (o todo junto: python -m pipeline.run)
 uv run pytest
 ```
+
+## Contenedor
+
+```bash
+docker build -t pulso-data-pipeline .
+# Corrida programada (ingest_bank, build, publish). ingest_e0 es una carga única y manual.
+docker run --rm -e PIPELINE_ROOT=s3://<bucket>/<prefijo> -e DATASET_BUCKET=... -e PSEUDONYM_KEY=... pulso-data-pipeline
+```
+
+- Usuario no root (uid 10001), sin red en tiempo de ejecución para DuckDB (la extensión `httpfs` se instala en la imagen).
+- `PIPELINE_ROOT` puede ser una ruta local o `s3://`. `WORK_DIR` (por defecto `/work`) es el scratch donde vive `warehouse.duckdb`.
+- Con el lake en S3 el runner usa el target `s3` de dbt (credenciales por el rol de la tarea) y sube la publicación con `latest.json` al final.

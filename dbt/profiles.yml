@@ -1,8 +1,19 @@
 # Sin secretos: solo referencias a variables de entorno.
+# WAREHOUSE_PATH: archivo local (scratch). PIPELINE_ROOT: ruta local (target dev) o s3://bucket/prefijo (target s3).
+# El target s3 toma las credenciales de la cadena estándar de AWS (rol de la tarea ECS); el runner lo elige solo.
 data_pipeline:
   target: dev
   outputs:
     dev:
       type: duckdb
-      path: "{{ env_var('PIPELINE_ROOT') }}/warehouse.duckdb"
+      path: "{{ env_var('WAREHOUSE_PATH', env_var('PIPELINE_ROOT') ~ '/warehouse.duckdb') }}"
       threads: 4
+    s3:
+      type: duckdb
+      path: "{{ env_var('WAREHOUSE_PATH') }}"
+      threads: 4
+      extensions:
+        - httpfs
+      secrets:
+        - type: s3
+          provider: credential_chain

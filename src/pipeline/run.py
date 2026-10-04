@@ -18,7 +18,9 @@ from pipeline import ingest_bank, ingest_e0, publish
 from pipeline.config import Settings
 
 REPO = Path(__file__).resolve().parents[2]
-STEPS = ("ingest_bank", "ingest_e0", "build", "publish")
+# ingest_e0 es una carga única y manual (la muestra es restringida): no entra en la corrida programada.
+STEPS = ("ingest_bank", "build", "publish")
+ALL_STEPS = ("ingest_bank", "ingest_e0", "build", "publish")
 REQUIRED = {
     "ingest_bank": ("PIPELINE_ROOT", "DATASET_BUCKET"),
     "ingest_e0": ("PIPELINE_ROOT", "E0_SOURCE_DIR"),
@@ -44,15 +46,23 @@ def run(steps: tuple[str, ...], bank_tables: tuple[str, ...] = ingest_bank.ALL_T
             ingest_e0.run(Path(os.environ["E0_SOURCE_DIR"]))
         elif step == "build":
             dbt = REPO / "dbt"
+            Path(settings.work_dir).mkdir(parents=True, exist_ok=True)
+            env = {
+                **os.environ,
+                "WAREHOUSE_PATH": settings.warehouse_path,
+                "DBT_TARGET_PATH": f"{settings.work_dir}/target",
+                "DBT_LOG_PATH": f"{settings.work_dir}/logs",
+                "DBT_SEND_ANONYMOUS_USAGE_STATS": "false",
+            }
             res = subprocess.run(
-                [sys.executable, "-m", "dbt.cli.main", "build", "--project-dir", str(dbt), "--profiles-dir", str(dbt)],
-                check=False,
+                [sys.executable, "-m", "dbt.cli.main", "build", "--project-dir", str(dbt), "--profiles-dir", str(dbt),
+                 "--target", "s3" if settings.is_remote else "dev"],
+                check=False, env=env,
             )
             if res.returncode != 0:
                 raise SystemExit(f"dbt build falló (código {res.returncode}); no se publica.")
         elif step == "publish":
-            out = publish.publish(Path(settings.root) / "warehouse.duckdb", Path(settings.root))
-            print(f"publicado en {out}")
+            print(f"publicado en {publish.publish_from_settings(settings)}")
 
 
 def main() -> None:
@@ -61,9 +71,9 @@ def main() -> None:
     p.add_argument("--bank-tables", default=",".join(ingest_bank.ALL_TABLES))
     a = p.parse_args()
     steps = tuple(s.strip() for s in a.steps.split(",") if s.strip())
-    unknown = set(steps) - set(STEPS)
+    unknown = set(steps) - set(ALL_STEPS)
     if unknown:
-        raise SystemExit(f"Pasos desconocidos: {sorted(unknown)}; válidos: {STEPS}")
+        raise SystemExit(f"Pasos desconocidos: {sorted(unknown)}; válidos: {ALL_STEPS}")
     run(steps, tuple(t.strip() for t in a.bank_tables.split(",") if t.strip()))
 
 

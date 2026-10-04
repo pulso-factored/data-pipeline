@@ -147,15 +147,49 @@ def publish(warehouse: Path, dest_root: Path, run_id: str | None = None) -> Path
     return out_dir
 
 
+def _split_s3(uri: str) -> tuple[str, str]:
+    bucket, _, prefix = uri.removeprefix("s3://").partition("/")
+    return bucket, prefix.strip("/")
+
+
+def upload_publication(out_dir: Path, root_uri: str, client: Any = None) -> str:
+    """Sube una publicación local a s3://.../publish/<run_id>/ y SOLO AL FINAL mueve latest.json.
+
+    Las publicaciones son inmutables: si el prefijo del run ya tiene objetos, falla sin subir nada.
+    Con S3_KMS_KEY_ID se cifra con esa clave (SSE-KMS); si no, vale el cifrado por defecto del bucket.
+    """
+    if client is None:
+        import boto3
+
+        client = boto3.client("s3")
+    bucket, prefix = _split_s3(root_uri)
+    run_id = out_dir.name
+    base = f"{prefix}/publish/{run_id}".lstrip("/")
+    existing = client.list_objects_v2(Bucket=bucket, Prefix=f"{base}/", MaxKeys=1)
+    if existing.get("KeyCount", 0):
+        raise PublishError(f"s3://{bucket}/{base}/ ya existe: las publicaciones son inmutables")
+    extra: dict[str, str] = {}
+    if os.environ.get("S3_KMS_KEY_ID"):
+        extra = {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": os.environ["S3_KMS_KEY_ID"]}
+    for f in sorted(p for p in out_dir.rglob("*") if p.is_file()):
+        client.upload_file(str(f), bucket, f"{base}/{f.relative_to(out_dir).as_posix()}", ExtraArgs=extra or None)
+    latest = json.dumps({"run_id": run_id, "path": f"publish/{run_id}"}).encode("utf-8")
+    client.put_object(Bucket=bucket, Key=f"{prefix}/publish/latest.json".lstrip("/"), Body=latest, **extra)
+    return f"s3://{bucket}/{base}"
+
+
+def publish_from_settings(settings: Settings, run_id: str | None = None) -> str:
+    """Construye la publicación en el scratch y, si el lake es S3, la sube."""
+    stage = Path(settings.work_dir) if settings.is_remote else Path(settings.root)
+    out = publish(Path(settings.warehouse_path), stage, run_id)
+    return upload_publication(out, settings.root) if settings.is_remote else str(out)
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Publica gold como artefactos separados")
     p.add_argument("--run-id")
     a = p.parse_args()
-    settings = Settings.from_env()
-    if settings.is_remote:
-        raise SystemExit("Publicación a S3 pendiente: publicar local y subir con el runner de despliegue.")
-    out = publish(Path(settings.root) / "warehouse.duckdb", Path(settings.root), a.run_id)
-    print(f"publicado en {out}")
+    print(f"publicado en {publish_from_settings(Settings.from_env(), a.run_id)}")
 
 
 if __name__ == "__main__":
