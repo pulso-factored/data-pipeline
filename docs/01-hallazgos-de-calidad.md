@@ -85,3 +85,8 @@ Otros: `digital_events.customer_id` 24% nulo (sesiones anónimas): se mantienen 
 - **Escalas observadas:** CSAT 1-4 (que coincide con el contrato `csat`, 1-4), NPS 2-7 (doc 0-10), CES 1-4. No hay NPS 0-10 comparable.
 - **Nulos:** `nps_category` solo existe en NPS (estructural); preguntas 1-3 sin responder ~43% / ~62% / ~81%; solo 13 comentarios abiertos distintos (plantillas).
 - **`csat` en el modelo canónico:** 109.954 de las 589.903 interacciones con cierre (18,6%) reciben el CSAT más reciente de su encuesta. Los CSAT promedio por motivo: Transaccional 2,91, Producto 2,89, Técnico 2,70, Comercial 2,66, Retención 2,61, Queja 2,44.
+
+## Zona del evaluador (E0)
+
+- `labels` (2.000) y `timeline` (30.244) se transforman en un `eval.duckdb` aparte con `replay_order`. Las 17 comprobaciones pasan: cada caso de E0 tiene su etiqueta, `split` y `rank` coinciden con los derivados de `opened_at` **sin leer labels**, `timeline` cubre todos los eventos de platform_history y los 160 casos de estrés son 100 en portugués y 60 difíciles (12 de cada tipo).
+- Los artefactos de `publish/` no contienen ninguna columna del evaluador.

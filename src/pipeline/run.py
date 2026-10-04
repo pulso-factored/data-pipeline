@@ -18,14 +18,15 @@ from pipeline import ingest_bank, ingest_e0, publish
 from pipeline.config import Settings
 
 REPO = Path(__file__).resolve().parents[2]
-# ingest_e0 es una carga única y manual (la muestra es restringida): no entra en la corrida programada.
+# ingest_e0 y eval son manuales: la muestra E0 es restringida y la zona del evaluador es solo para el evaluador.
 STEPS = ("ingest_bank", "build", "publish")
-ALL_STEPS = ("ingest_bank", "ingest_e0", "build", "publish")
+ALL_STEPS = ("ingest_bank", "ingest_e0", "build", "publish", "eval")
 REQUIRED = {
     "ingest_bank": ("PIPELINE_ROOT", "DATASET_BUCKET"),
     "ingest_e0": ("PIPELINE_ROOT", "E0_SOURCE_DIR"),
     "build": ("PIPELINE_ROOT", "PSEUDONYM_KEY"),
     "publish": ("PIPELINE_ROOT",),
+    "eval": ("PIPELINE_ROOT", "PSEUDONYM_KEY"),
 }
 
 
@@ -63,6 +64,22 @@ def run(steps: tuple[str, ...], bank_tables: tuple[str, ...] = ingest_bank.ALL_T
                 raise SystemExit(f"dbt build falló (código {res.returncode}); no se publica.")
         elif step == "publish":
             print(f"publicado en {publish.publish_from_settings(settings)}")
+        elif step == "eval":
+            # Requiere haber corrido ingest_e0 y build: lee bronze_eval y adjunta el warehouse en solo lectura.
+            env = {**os.environ, "WAREHOUSE_PATH": settings.warehouse_path, "EVAL_PATH": settings.eval_path,
+                   "DBT_TARGET_PATH": f"{settings.work_dir}/target_eval", "DBT_LOG_PATH": f"{settings.work_dir}/logs",
+                   "DBT_SEND_ANONYMOUS_USAGE_STATS": "false"}
+            dbt = REPO / "dbt"
+            Path(settings.work_dir).mkdir(parents=True, exist_ok=True)
+            res = subprocess.run(
+                [sys.executable, "-m", "dbt.cli.main", "build", "--project-dir", str(dbt), "--profiles-dir", str(dbt),
+                 "--target", "eval_s3" if settings.is_remote else "eval", "--vars", "{build_eval: true}",
+                 "--select", "path:models/eval", "path:tests/eval"],
+                check=False, env=env,
+            )
+            if res.returncode != 0:
+                raise SystemExit(f"dbt build de la zona del evaluador falló (código {res.returncode}); no se publica.")
+            print(f"evaluador publicado en {publish.publish_eval_from_settings(settings)}")
 
 
 def main() -> None:

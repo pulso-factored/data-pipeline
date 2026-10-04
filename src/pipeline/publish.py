@@ -82,13 +82,14 @@ def check_guards(con: duckdb.DuckDBPyConnection, catalog: dict[str, dict[str, An
 
 
 def _copy_schema(src: duckdb.DuckDBPyConnection, db_path: Path, schema: str, parquet_dir: Path | None) -> dict[str, int]:
+    catalog = src.execute("select current_database()").fetchone()[0]  # el archivo puede llamarse como el esquema
     out = duckdb.connect(str(db_path))
     out.execute(f'create schema "{schema}"."{schema}"')
     rows: dict[str, int] = {}
     for t in tables_of(src, schema):
         if t in NEVER_PUBLISH_TABLES:
             continue
-        df = src.execute(f'select * from "{schema}"."{t}"').to_arrow_table()
+        df = src.execute(f'select * from "{catalog}"."{schema}"."{t}"').to_arrow_table()
         out.register("tmp_t", df)
         out.execute(f'create table "{schema}"."{schema}"."{t}" as select * from tmp_t')
         out.unregister("tmp_t")
@@ -147,12 +148,55 @@ def publish(warehouse: Path, dest_root: Path, run_id: str | None = None) -> Path
     return out_dir
 
 
+EVAL_SCHEMA = "eval"
+EVAL_AREA = "bronze_eval/eval"  # bajo el prefijo que el bucket ya reserva al evaluador
+
+
+def publish_eval(eval_db: Path, dest_root: Path, run_id: str | None = None) -> Path:
+    """Publica la base del evaluador (labels, timeline, replay_order) bajo bronze_eval/eval/<run_id>/.
+
+    Va FUERA de publish/: los lectores de analytics, masked y restricted no deben poder leerla. Guardia: la base solo
+    puede contener el esquema eval (nunca silver, canonical ni gold)."""
+    run_id = run_id or f"eval-{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
+    src = duckdb.connect(str(eval_db), read_only=True)
+    schemas = {r[0] for r in src.execute(
+        "select distinct table_schema from information_schema.tables "
+        "where table_schema not in ('information_schema', 'pg_catalog')"
+    ).fetchall()}
+    if schemas != {EVAL_SCHEMA}:
+        raise PublishError(f"La base del evaluador debe contener solo el esquema {EVAL_SCHEMA}; tiene {sorted(schemas)}")
+    out_dir = dest_root / EVAL_AREA / run_id
+    if out_dir.exists():
+        raise PublishError(f"{out_dir} ya existe: las publicaciones son inmutables")
+    out_dir.mkdir(parents=True)
+    rows = _copy_schema(src, out_dir / "eval.duckdb", EVAL_SCHEMA, None)
+    src.close()
+    release = {
+        "run_id": run_id,
+        "created_at": datetime.now(UTC).isoformat(),
+        "zone": "evaluator-only",
+        "rows": {EVAL_SCHEMA: rows},
+        "artifacts_sha256": {"eval.duckdb": sha256_of(out_dir / "eval.duckdb")},
+    }
+    (out_dir / "release.json").write_text(json.dumps(release, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp = dest_root / EVAL_AREA / "latest.json.tmp"
+    tmp.write_text(json.dumps({"run_id": run_id, "path": f"{EVAL_AREA}/{run_id}"}), encoding="utf-8")
+    os.replace(tmp, dest_root / EVAL_AREA / "latest.json")
+    return out_dir
+
+
+def publish_eval_from_settings(settings: Settings, run_id: str | None = None) -> str:
+    stage = Path(settings.work_dir) if settings.is_remote else Path(settings.root)
+    out = publish_eval(Path(settings.eval_path), stage, run_id)
+    return upload_publication(out, settings.root, area=EVAL_AREA) if settings.is_remote else str(out)
+
+
 def _split_s3(uri: str) -> tuple[str, str]:
     bucket, _, prefix = uri.removeprefix("s3://").partition("/")
     return bucket, prefix.strip("/")
 
 
-def upload_publication(out_dir: Path, root_uri: str, client: Any = None) -> str:
+def upload_publication(out_dir: Path, root_uri: str, client: Any = None, area: str = "publish") -> str:
     """Sube una publicación local a s3://.../publish/<run_id>/ y SOLO AL FINAL mueve latest.json.
 
     Las publicaciones son inmutables: si el prefijo del run ya tiene objetos, falla sin subir nada.
@@ -164,7 +208,7 @@ def upload_publication(out_dir: Path, root_uri: str, client: Any = None) -> str:
         client = boto3.client("s3")
     bucket, prefix = _split_s3(root_uri)
     run_id = out_dir.name
-    base = f"{prefix}/publish/{run_id}".lstrip("/")
+    base = f"{prefix}/{area}/{run_id}".lstrip("/")
     existing = client.list_objects_v2(Bucket=bucket, Prefix=f"{base}/", MaxKeys=1)
     if existing.get("KeyCount", 0):
         raise PublishError(f"s3://{bucket}/{base}/ ya existe: las publicaciones son inmutables")
@@ -173,8 +217,8 @@ def upload_publication(out_dir: Path, root_uri: str, client: Any = None) -> str:
         extra = {"ServerSideEncryption": "aws:kms", "SSEKMSKeyId": os.environ["S3_KMS_KEY_ID"]}
     for f in sorted(p for p in out_dir.rglob("*") if p.is_file()):
         client.upload_file(str(f), bucket, f"{base}/{f.relative_to(out_dir).as_posix()}", ExtraArgs=extra or None)
-    latest = json.dumps({"run_id": run_id, "path": f"publish/{run_id}"}).encode("utf-8")
-    client.put_object(Bucket=bucket, Key=f"{prefix}/publish/latest.json".lstrip("/"), Body=latest, **extra)
+    latest = json.dumps({"run_id": run_id, "path": f"{area}/{run_id}"}).encode("utf-8")
+    client.put_object(Bucket=bucket, Key=f"{prefix}/{area}/latest.json".lstrip("/"), Body=latest, **extra)
     return f"s3://{bucket}/{base}"
 
 

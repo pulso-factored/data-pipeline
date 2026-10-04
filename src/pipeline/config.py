@@ -35,3 +35,8 @@ class Settings:
     def warehouse_path(self) -> str:
         """DuckDB es un archivo local: aun con el lake en S3, el warehouse vive en el scratch."""
         return f"{self.work_dir}/warehouse.duckdb"
+
+    @property
+    def eval_path(self) -> str:
+        """Base propia de la zona del evaluador (labels y timeline); nunca dentro del warehouse."""
+        return f"{self.work_dir}/eval.duckdb"

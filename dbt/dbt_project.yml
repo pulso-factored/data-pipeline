@@ -4,7 +4,7 @@ config-version: 2
 profile: data_pipeline
 
 model-paths: ["models"]
-macro-paths: ["macros"]
+macro-paths: ["macros", "macros_eval"]
 seed-paths: ["seeds"]
 test-paths: ["tests"]
 
@@ -32,6 +32,12 @@ models:
     gold_masked:
       +schema: gold_masked
       +materialized: table
+    # Zona del evaluador (labels y timeline): solo se construye con --vars build_eval=true y el target eval,
+    # que escribe en un eval.duckdb propio. En cualquier otro build estos modelos y sus tests están deshabilitados.
+    eval:
+      +schema: eval
+      +materialized: table
+      +enabled: "{{ var('build_eval', false) }}"
 
 seeds:
   data_pipeline:

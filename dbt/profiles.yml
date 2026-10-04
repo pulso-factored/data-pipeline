@@ -17,3 +17,25 @@ data_pipeline:
       secrets:
         - type: s3
           provider: credential_chain
+    # Zona del evaluador: base propia (EVAL_PATH) con el warehouse adjunto en solo lectura para las comprobaciones cruzadas.
+    eval:
+      type: duckdb
+      path: "{{ env_var('EVAL_PATH') }}"
+      threads: 4
+      attach:
+        - path: "{{ env_var('WAREHOUSE_PATH') }}"
+          alias: wh
+          read_only: true
+    eval_s3:
+      type: duckdb
+      path: "{{ env_var('EVAL_PATH') }}"
+      threads: 4
+      extensions:
+        - httpfs
+      secrets:
+        - type: s3
+          provider: credential_chain
+      attach:
+        - path: "{{ env_var('WAREHOUSE_PATH') }}"
+          alias: wh
+          read_only: true

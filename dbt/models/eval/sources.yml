@@ -1,0 +1,19 @@
+version: 2
+
+# El warehouse se adjunta en solo lectura (alias wh) solo para las comprobaciones cruzadas de la zona del evaluador.
+sources:
+  - name: wh
+    database: wh
+    schema: canonical
+    tables:
+      - name: cases
+      - name: turns
+      - name: tool_calls
+      - name: copilot_queries
+      - name: identity_checks
+      - name: approvals
+  - name: wh_gold
+    database: wh
+    schema: gold_analytics
+    tables:
+      - name: case_facts

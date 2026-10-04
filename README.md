@@ -11,7 +11,7 @@ Pipeline analítico (arquitectura medallón: bronze, silver, gold) con dbt + Duc
 - Nunca credenciales ni datos reales en el repo. Las credenciales del bucket del reto van por variables de entorno.
 - `labels` de la muestra E0 es solo para el evaluador.
 
-Estado: rebanada 7 lista (+ encuestas y CSAT en el modelo canónico) (silver, modelo canónico `platform_history`, gold_restricted y gold_analytics, catálogo FieldClassification y marts de calidad). 195 comprobaciones de dbt + 24 tests.
+Estado: rebanada 8 lista (+ zona del evaluador aislada en su propio eval.duckdb) (silver, modelo canónico `platform_history`, gold_restricted y gold_analytics, catálogo FieldClassification y marts de calidad). 195 comprobaciones de dbt + 24 tests.
 
 ## Uso local
 
@@ -48,3 +48,13 @@ El bucket del reto está en otra cuenta y otra región que el lago. Se usan cred
 | `AWS_DEFAULT_REGION` (def. `us-east-1`) y la cadena estándar de AWS (rol de la tarea) | el lago |
 
 No use `AWS_ACCESS_KEY_ID`/`AWS_SECRET_ACCESS_KEY` para las claves del reto en producción: tienen prioridad sobre el rol de la tarea y el pipeline escribiría en el lago con claves de otra cuenta. Sin `DATASET_AWS_*` (desarrollo local) el dataset usa la cadena estándar.
+
+## Zona del evaluador
+
+`labels` y `timeline` (las respuestas) nunca entran al warehouse ni a `publish/`. Se construyen aparte, a demanda:
+
+```bash
+python -m pipeline.run --steps ingest_e0,build,eval   # requiere E0_SOURCE_DIR; escribe bronze_eval/eval/<run>/eval.duckdb
+```
+
+El paso `eval` usa el target `eval` (o `eval_s3`) de dbt con `--vars "{build_eval: true}"`: su base es `EVAL_PATH` y el warehouse se adjunta en solo lectura únicamente para las comprobaciones cruzadas. En S3 queda bajo `bronze_eval/eval/`, protegido por el módulo `data_lake` de infra (solo el evaluador lee).

@@ -58,3 +58,15 @@ def test_kms_key_is_used_when_configured(tmp_path: Path, monkeypatch: pytest.Mon
     s3 = FakeS3()
     upload_publication(_run_dir(tmp_path), "s3://lake", client=s3)
     assert all(e and e["ServerSideEncryption"] == "aws:kms" for e in s3.extra)
+
+
+def test_eval_area_uploads_under_bronze_eval_and_moves_its_own_pointer(tmp_path: Path) -> None:
+    d = tmp_path / "bronze_eval" / "eval" / "eval-1"
+    d.mkdir(parents=True)
+    (d / "eval.duckdb").write_bytes(b"x")
+    s3 = FakeS3()
+    uri = upload_publication(d, "s3://lake/pulso", client=s3, area="bronze_eval/eval")
+    keys = [k for _, k in s3.calls]
+    assert uri == "s3://lake/pulso/bronze_eval/eval/eval-1"
+    assert keys == ["pulso/bronze_eval/eval/eval-1/eval.duckdb", "pulso/bronze_eval/eval/latest.json"]
+    assert not any("/publish/" in k for k in keys)  # jamás en el prefijo de los consumidores

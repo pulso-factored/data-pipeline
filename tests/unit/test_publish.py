@@ -79,3 +79,41 @@ def test_masked_artifact_is_published_and_guarded(tmp_path: Path) -> None:
     leaky = _warehouse(tmp_path / "leaky.duckdb", masked_extra=", 'ana@x.com' as email")
     with pytest.raises(PublishError, match="gold_masked.customer_profile contiene PII directa"):
         publish(leaky, tmp_path, "run-leaky")
+
+
+def _eval_db(path: Path, extra_schema: bool = False) -> Path:
+    """Se construye con otro nombre y se copia a `path`: en producción el archivo se llama eval.duckdb, igual que su
+    esquema, y la publicación tiene que calificar el catálogo para no confundirlos."""
+    import shutil
+
+    build = path.with_name("build.duckdb")
+    con = duckdb.connect(str(build))
+    con.execute("create schema eval")
+    con.execute("create table eval.labels as select 'CASE-1' as case_id, 'Resolved' as final_status")
+    if extra_schema:
+        con.execute("create schema silver; create table silver.customers as select 'CLI-1' as customer_id")
+    con.close()
+    shutil.copy(build, path)
+    return path
+
+
+def test_eval_zone_is_published_outside_publish_and_keeps_its_answers(tmp_path: Path) -> None:
+    from pipeline.publish import publish_eval
+
+    out = publish_eval(_eval_db(tmp_path / "eval.duckdb"), tmp_path, "eval-1")
+    assert out == tmp_path / "bronze_eval" / "eval" / "eval-1"
+    assert not (tmp_path / "publish").exists()  # nunca bajo publish/: lo leerían los consumidores
+    con = duckdb.connect()
+    con.execute(f"attach '{(out / 'eval.duckdb').as_posix()}' as ev (read_only)")
+    assert con.execute("select final_status from ev.eval.labels").fetchone() == ("Resolved",)
+    release = json.loads((out / "release.json").read_text(encoding="utf-8"))
+    assert release["zone"] == "evaluator-only"
+    latest = json.loads((tmp_path / "bronze_eval" / "eval" / "latest.json").read_text(encoding="utf-8"))
+    assert latest["run_id"] == "eval-1"
+
+
+def test_eval_database_must_contain_only_the_eval_schema(tmp_path: Path) -> None:
+    from pipeline.publish import publish_eval
+
+    with pytest.raises(PublishError, match="solo el esquema eval"):
+        publish_eval(_eval_db(tmp_path / "bad.duckdb", extra_schema=True), tmp_path, "eval-bad")

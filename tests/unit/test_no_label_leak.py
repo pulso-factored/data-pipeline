@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 DBT = Path(__file__).resolve().parents[2] / "dbt"
-EVAL_ZONE = DBT / "models" / "eval"
+EVAL_ZONES = (DBT / "models" / "eval", DBT / "tests" / "eval", DBT / "macros_eval")
 FORBIDDEN = re.compile(r"bronze_eval|\blabels\b|\bfinal_(status|resolution_code|resolution_date|sla_breached)\b")
 
 
@@ -17,7 +17,7 @@ def _files():
         for p in DBT.rglob(ext):
             if "target" in p.parts or "dbt_packages" in p.parts:
                 continue
-            if EVAL_ZONE in p.parents:
+            if any(z in p.parents for z in EVAL_ZONES):
                 continue
             yield p
 
