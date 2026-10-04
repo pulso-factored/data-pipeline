@@ -19,3 +19,6 @@ models:
     columns:
       - { name: case_id, data_tests: [unique, not_null] }
       - { name: customer_pseudo, data_tests: [not_null] }
+  - name: masked_customer_digital_summary
+    columns:
+      - { name: customer_pseudo, data_tests: [unique, not_null] }

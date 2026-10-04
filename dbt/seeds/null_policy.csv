@@ -67,3 +67,39 @@ satisfaction_surveys,question_3_response,missing_real,Pregunta/comentario opcion
 satisfaction_surveys,open_comments,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).
 satisfaction_surveys,comment_sentiment,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).
 satisfaction_surveys,campaign_response_rate,missing_real,Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).
+campaign_sends,template_used,missing_real,~10%.
+campaign_sends,subject,structural,Solo Email; ~10% faltante real dentro de Email.
+campaign_sends,was_opened,structural,"Solo Email, Push y SMS entregados: Voice y WhatsApp no rastrean aperturas y un envío no entregado no puede abrirse."
+campaign_sends,open_ts,state,"Solo existe si el evento ocurrió (abrió, hizo clic, convirtió)."
+campaign_sends,click_ts,state,"Solo existe si el evento ocurrió (abrió, hizo clic, convirtió)."
+campaign_sends,click_count,state,"Solo existe si el evento ocurrió (abrió, hizo clic, convirtió)."
+campaign_sends,conversion_ts,state,"Solo existe si el evento ocurrió (abrió, hizo clic, convirtió)."
+campaign_sends,conversion_value,state,"Solo existe si el evento ocurrió (abrió, hizo clic, convirtió)."
+campaign_sends,open_device,state,Solo existe si el correo se abrió; ~10% faltante real dentro de lo abierto.
+campaign_sends,open_country,state,Solo existe si el correo se abrió; ~10% faltante real dentro de lo abierto.
+campaign_sends,failure_reason,structural,"Solo envíos no exitosos (Failed, Bounced, Blocked); ~5% faltante real dentro de ellos."
+campaign_sends,send_cost,missing_real,~15% uniforme en todos los canales (is_missing_send_cost).
+digital_events,customer_id,derivable,"24% de los eventos: 3,1 M están en sesiones totalmente anónimas (20% de las sesiones, sin cliente) y 624 mil en sesiones mixtas, donde se derivan del cliente único de la sesión (customer_id_resolved / customer_id_source)."
+digital_events,platform,missing_real,Opcional; faltante uniforme entre tipos de evento.
+digital_events,browser,structural,Solo canales web; ~5% faltante real dentro de ellos.
+digital_events,app_version,structural,Solo apps; ~5% faltante real dentro de ellas.
+digital_events,page_url,missing_real,Opcional; faltante uniforme entre tipos de evento.
+digital_events,page_title,missing_real,Opcional; faltante uniforme entre tipos de evento.
+digital_events,action,missing_real,Opcional; faltante uniforme entre tipos de evento.
+digital_events,element_id,missing_real,Opcional; faltante uniforme entre tipos de evento.
+digital_events,product_id,structural,"Solo eventos ligados a un producto (Click ~19%, PageView ~13%)."
+digital_events,event_value,structural,Solo FormSubmit y Purchase; ~5% faltante real dentro de ellos.
+digital_events,duration_seconds,structural,Solo PageView; ~5% faltante real dentro de PageView.
+digital_events,ip_address,missing_real,Opcional; faltante uniforme entre tipos de evento.
+digital_events,ip_city,missing_real,Opcional; faltante uniforme entre tipos de evento.
+digital_events,referrer,missing_real,Atribución de marketing: ~93-95% sin dato.
+digital_events,utm_source,missing_real,Atribución de marketing: ~93-95% sin dato.
+digital_events,utm_medium,missing_real,Atribución de marketing: ~93-95% sin dato.
+digital_events,utm_campaign,missing_real,Atribución de marketing: ~93-95% sin dato.
+digital_events,customer_id_resolved,structural,"Sesión totalmente anónima (20% de las sesiones, 3,1 M de eventos): no hay cliente que derivar."
+marketing_campaigns,description,missing_real,Opcional en el diccionario.
+marketing_campaigns,promoted_product,missing_real,Opcional en el diccionario.
+marketing_campaigns,target_segment,missing_real,Opcional en el diccionario.
+marketing_campaigns,target_country,missing_real,Opcional en el diccionario.
+marketing_campaigns,budget,missing_real,Opcional en el diccionario.
+marketing_campaigns,expected_conversion_rate,missing_real,Opcional en el diccionario.

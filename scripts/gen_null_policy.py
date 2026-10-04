@@ -59,13 +59,38 @@ RULES: dict[tuple[str, str], tuple[str, str]] = {
     **{("satisfaction_surveys", c): ("missing_real", "Pregunta/comentario opcional (~43% / ~62% / ~81% sin responder; 13 comentarios distintos).")
        for c in ["question_1_text", "question_1_response", "question_2_text", "question_2_response", "question_3_text",
                  "question_3_response", "open_comments", "comment_sentiment", "campaign_response_rate"]},
+    # campaign_sends
+    ("campaign_sends", "was_opened"): ("structural", "Solo Email, Push y SMS entregados: Voice y WhatsApp no rastrean aperturas y un envío no entregado no puede abrirse."),
+    **{("campaign_sends", c): ("state", "Solo existe si el evento ocurrió (abrió, hizo clic, convirtió).")
+       for c in ["open_ts", "click_ts", "click_count", "conversion_ts", "conversion_value"]},
+    **{("campaign_sends", c): ("state", "Solo existe si el correo se abrió; ~10% faltante real dentro de lo abierto.")
+       for c in ["open_device", "open_country"]},
+    ("campaign_sends", "failure_reason"): ("structural", "Solo envíos no exitosos (Failed, Bounced, Blocked); ~5% faltante real dentro de ellos."),
+    ("campaign_sends", "subject"): ("structural", "Solo Email; ~10% faltante real dentro de Email."),
+    ("campaign_sends", "template_used"): ("missing_real", "~10%."),
+    ("campaign_sends", "send_cost"): ("missing_real", "~15% uniforme en todos los canales (is_missing_send_cost)."),
+    # digital_events
+    ("digital_events", "customer_id"): ("derivable", "24% de los eventos: 3,1 M están en sesiones totalmente anónimas (20% de las sesiones, sin cliente) y 624 mil en sesiones mixtas, donde se derivan del cliente único de la sesión (customer_id_resolved / customer_id_source)."),
+    ("digital_events", "customer_id_resolved"): ("structural", "Sesión totalmente anónima (20% de las sesiones, 3,1 M de eventos): no hay cliente que derivar."),
+    ("digital_events", "duration_seconds"): ("structural", "Solo PageView; ~5% faltante real dentro de PageView."),
+    ("digital_events", "event_value"): ("structural", "Solo FormSubmit y Purchase; ~5% faltante real dentro de ellos."),
+    ("digital_events", "product_id"): ("structural", "Solo eventos ligados a un producto (Click ~19%, PageView ~13%)."),
+    ("digital_events", "browser"): ("structural", "Solo canales web; ~5% faltante real dentro de ellos."),
+    ("digital_events", "app_version"): ("structural", "Solo apps; ~5% faltante real dentro de ellas."),
+    **{("digital_events", c): ("missing_real", "Opcional; faltante uniforme entre tipos de evento.")
+       for c in ["platform", "page_url", "page_title", "action", "element_id", "ip_address", "ip_city"]},
+    **{("digital_events", c): ("missing_real", "Atribución de marketing: ~93-95% sin dato.")
+       for c in ["referrer", "utm_source", "utm_medium", "utm_campaign"]},
+    # marketing_campaigns
+    **{("marketing_campaigns", c): ("missing_real", "Opcional en el diccionario.")
+       for c in ["description", "promoted_product", "target_segment", "target_country", "budget", "expected_conversion_rate"]},
     # service_agents
     **{("service_agents", c): ("missing_real", "Opcional en el diccionario.")
        for c in ["phone", "assigned_branch_id", "specialty", "avg_csat", "total_monthly_interactions"]},
     ("transactions", "amount_usd_reported"): ("derivable", "Se completa en amount_usd (identidad para USD, tasa del día para COP/ARS); ver amount_usd_source."),
 }
 
-TABLES = ["customers", "products", "complaints", "transactions", "interactions", "call_transcripts", "service_agents", "satisfaction_surveys"]
+TABLES = ["customers", "products", "complaints", "transactions", "interactions", "call_transcripts", "service_agents", "satisfaction_surveys", "campaign_sends", "digital_events", "marketing_campaigns"]
 
 
 def main() -> None:

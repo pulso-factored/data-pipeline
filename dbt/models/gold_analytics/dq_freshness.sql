@@ -5,4 +5,6 @@ union all select 'products', cast(max(opening_date) as timestamp), max(_ingested
 union all select 'complaints', max(creation_date), max(_ingested_at), count(*) from {{ ref('complaints') }}
 union all select 'transactions', max(transaction_ts), max(_ingested_at), count(*) from {{ ref('transactions') }}
 union all select 'interactions', max(interaction_ts), max(_ingested_at), count(*) from {{ ref('interactions') }}
+union all select 'campaign_sends', max(send_ts), max(_ingested_at), count(*) from {{ ref('campaign_sends') }}
+union all select 'digital_events', max(event_ts), max(_ingested_at), count(*) from {{ ref('digital_events') }}
 union all select 'e0_cases', max(opened_at), max(_ingested_at), count(*) from {{ ref('stg_e0_case') }}

@@ -130,3 +130,36 @@ models:
           - relationships: { arguments: { to: ref('customers'), field: customer_id } }
       - name: survey_type
         data_tests: [{ accepted_values: { arguments: { values: [CSAT, NPS, CES] } } }]
+
+  - name: marketing_campaigns
+    columns:
+      - { name: campaign_id, data_tests: [unique, not_null] }
+
+  - name: campaign_sends
+    columns:
+      - { name: send_id, data_tests: [unique, not_null] }
+      - name: customer_id
+        data_tests:
+          - relationships: { arguments: { to: ref('customers'), field: customer_id } }
+      - name: campaign_id
+        data_tests:
+          - relationships: { arguments: { to: ref('marketing_campaigns'), field: campaign_id } }
+      - name: send_channel
+        data_tests: [{ accepted_values: { arguments: { values: [Email, SMS, WhatsApp, Push, Voice] } } }]
+      - name: send_status
+        data_tests: [{ accepted_values: { arguments: { values: [Sent, Failed, Bounced, Blocked] } } }]
+
+  - name: digital_sessions
+    columns:
+      - { name: session_id, data_tests: [unique, not_null] }
+
+  - name: digital_events
+    columns:
+      - { name: event_id, data_tests: [unique, not_null] }
+      - name: customer_id
+        data_tests:
+          - relationships: { arguments: { to: ref('customers'), field: customer_id } }
+      - name: event_type
+        data_tests: [{ accepted_values: { arguments: { values: [PageView, Click, Login, Logout, FormSubmit, Error, Purchase] } } }]
+      - name: channel
+        data_tests: [{ accepted_values: { arguments: { values: [Android App, iOS App, Desktop Web, Mobile Web] } } }]

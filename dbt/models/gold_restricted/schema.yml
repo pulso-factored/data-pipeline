@@ -34,3 +34,11 @@ models:
     columns:
       - { name: customer_id, data_tests: [unique, not_null] }
       - { name: customer_pseudo, data_tests: [unique, not_null] }
+  - name: customer_digital_summary
+    description: "Resumen digital de los 90 días previos al corte, por cliente. Sin eventos crudos, IP ni URL."
+    columns:
+      - name: customer_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships: { arguments: { to: ref('customer_profile'), field: customer_id } }

@@ -16,6 +16,12 @@ models:
   - name: contact_reasons_monthly
     columns:
       - { name: contacts, data_tests: [not_null] }
+  - name: campaign_performance_monthly
+    columns:
+      - { name: sends, data_tests: [not_null] }
+  - name: digital_events_daily
+    columns:
+      - { name: events, data_tests: [not_null] }
   - name: dq_null_profile
     columns:
       - name: null_type

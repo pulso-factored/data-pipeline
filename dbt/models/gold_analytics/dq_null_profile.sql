@@ -9,6 +9,9 @@ with profile as (
     union all {{ null_profile('service_agents') }}
     union all {{ null_profile('call_transcripts') }}
     union all {{ null_profile('satisfaction_surveys') }}
+    union all {{ null_profile('campaign_sends') }}
+    union all {{ null_profile('digital_events') }}
+    union all {{ null_profile('marketing_campaigns') }}
 )
 select
     p.table_name, p.column_name, p.total_rows, p.null_rows,

@@ -7,6 +7,8 @@ with all_rows as (
     union all select 'interactions', quarantine_reason from {{ ref('interactions_checked') }}
     union all select 'call_transcripts', quarantine_reason from {{ ref('call_transcripts_checked') }}
     union all select 'satisfaction_surveys', quarantine_reason from {{ ref('satisfaction_surveys_checked') }}
+    union all select 'campaign_sends', quarantine_reason from {{ ref('campaign_sends_checked') }}
+    union all select 'digital_events', quarantine_reason from {{ ref('digital_events_checked') }}
 )
 select
     table_name,
