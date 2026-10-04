@@ -1,4 +1,7 @@
 # Sin secretos: solo referencias a variables de entorno.
+# threads = 1 a propósito: DuckDB ya paraleliza cada consulta con todos los núcleos, y varios hilos de dbt compiten por
+# los mismos núcleos y la misma memoria. Medido: build completo 17m46s con 4 hilos vs 6m18s con 1 (mismo resultado).
+# DBT_THREADS lo cambia si algún día hay modelos que no saturen la máquina.
 # WAREHOUSE_PATH: archivo local (scratch). PIPELINE_ROOT: ruta local (target dev) o s3://bucket/prefijo (target s3).
 # El target s3 toma las credenciales de la cadena estándar de AWS (rol de la tarea ECS); el runner lo elige solo.
 data_pipeline:
@@ -7,11 +10,11 @@ data_pipeline:
     dev:
       type: duckdb
       path: "{{ env_var('WAREHOUSE_PATH', env_var('PIPELINE_ROOT') ~ '/warehouse.duckdb') }}"
-      threads: 4
+      threads: "{{ env_var('DBT_THREADS', 1) | int }}"
     s3:
       type: duckdb
       path: "{{ env_var('WAREHOUSE_PATH') }}"
-      threads: 4
+      threads: "{{ env_var('DBT_THREADS', 1) | int }}"
       extensions:
         - httpfs
       secrets:
@@ -21,7 +24,7 @@ data_pipeline:
     eval:
       type: duckdb
       path: "{{ env_var('EVAL_PATH') }}"
-      threads: 4
+      threads: "{{ env_var('DBT_THREADS', 1) | int }}"
       attach:
         - path: "{{ env_var('WAREHOUSE_PATH') }}"
           alias: wh
@@ -29,7 +32,7 @@ data_pipeline:
     eval_s3:
       type: duckdb
       path: "{{ env_var('EVAL_PATH') }}"
-      threads: 4
+      threads: "{{ env_var('DBT_THREADS', 1) | int }}"
       extensions:
         - httpfs
       secrets:

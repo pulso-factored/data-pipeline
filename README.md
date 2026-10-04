@@ -58,3 +58,7 @@ python -m pipeline.run --steps ingest_e0,build,eval   # requiere E0_SOURCE_DIR; 
 ```
 
 El paso `eval` usa el target `eval` (o `eval_s3`) de dbt con `--vars "{build_eval: true}"`: su base es `EVAL_PATH` y el warehouse se adjunta en solo lectura únicamente para las comprobaciones cruzadas. En S3 queda bajo `bronze_eval/eval/`, protegido por el módulo `data_lake` de infra (solo el evaluador lee).
+
+## Rendimiento
+
+Un build completo (232 comprobaciones, 15,6 M de eventos digitales y 4,4 M de transacciones) tarda ~6 min en una laptop. Los perfiles usan **1 hilo de dbt** (`DBT_THREADS`): DuckDB ya paraleliza cada consulta, y con 4 hilos los modelos competían por los mismos núcleos y la memoria. Medido, el mismo modelo tardó 10 s aislado y 417 s dentro de un build de 4 hilos (`customer_transactions`). CPU y memoria en Fargate siguen sin medirse.
