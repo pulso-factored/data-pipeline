@@ -75,12 +75,12 @@ El diccionario promete ~2% de duplicados, ~5% de nulos, llegadas tardías y evol
 
 ## Para el agente
 
-Read-models por cliente (perfil, productos, transacciones, casos, resumen digital) con su contrato de lectura. Consulta puntual por cliente: mediana 19 ms, p95 27 ms (medido en una laptop, sin carga). Detalle en `docs/03-contrato-de-lectura-y-vinculo.md`.
+Read-models por cliente (perfil, productos, transacciones, casos, resumen digital) con su contrato de lectura, que el `tool-service` ya consume. Probar ese servicio contra datos reales destapó un error del pipeline (la bandera `is_missing_credit_limit` marcaba también los productos sin cupo), corregido en data-pipeline#1 junto con la devolución de las banderas en tool-service#3. Consulta puntual por cliente: mediana 19 ms, p95 27 ms (medido en una laptop, sin carga). Detalle en `docs/03-contrato-de-lectura-y-vinculo.md`.
 
 ## Lo que NO está (honestidad)
 
 - **No hay nada desplegado.** El Terraform (lago, roles, tarea batch) está declarado y probado solo con proveedor simulado; no se ha corrido `plan` ni `apply`, y el CI de la organización no ha podido ejecutarse (bloqueo de facturación de GitHub Actions).
-- **El `tool-service` y el `HttpToolExecutor` de agent-core no existen todavía:** los agentes aún no leen estos datos.
+- **El cableado de extremo a extremo con los agentes no está verificado.** El `tool-service` (repo `pulso-factored/tool-service`) y el `HttpToolExecutor` de agent-core (ADR 0025) existen y los construyó otra sesión; yo comprobé que las 4 lecturas del servicio funcionan contra la publicación real (11-29 ms por consulta, con un cliente vinculado de demo), pero no que los agentes las usen en una conversación.
 - **E0 es en parte generada** (mensajes, herramientas, aprobaciones); el portugués solo existe en sus casos de estrés. El dataset no tiene clientes en Brasil.
 - **La fuente de la Plataforma CC** no está cargada (falta su esquema real).
 - Sin medir: CPU y memoria en Fargate, latencia bajo carga, k-anonimato de los cuasi-identificadores.
