@@ -11,7 +11,8 @@ class Settings:
     root: str  # raíz del lakehouse: ruta local o s3://bucket/prefix
     dataset_bucket: str
     dataset_prefix: str
-    region: str
+    region: str  # región del lago (AWS_DEFAULT_REGION)
+    dataset_region: str  # región del bucket del reto (otra cuenta y otra región que el lago)
     work_dir: str  # scratch local (warehouse.duckdb, target/, logs, staging de publicación)
 
     @classmethod
@@ -21,7 +22,8 @@ class Settings:
             root=root,
             dataset_bucket=os.environ.get("DATASET_BUCKET", ""),
             dataset_prefix=os.environ.get("DATASET_PREFIX", "data/"),
-            region=os.environ.get("AWS_DEFAULT_REGION", "us-east-2"),
+            region=os.environ.get("AWS_DEFAULT_REGION", "us-east-1"),
+            dataset_region=os.environ.get("DATASET_REGION", "us-east-2"),
             work_dir=os.environ.get("WORK_DIR") or (root if not root.startswith("s3://") else "work"),
         )
 

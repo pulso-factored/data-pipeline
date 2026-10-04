@@ -11,6 +11,7 @@ import hashlib
 import os
 import re
 import uuid
+from collections.abc import Mapping
 from concurrent.futures import ThreadPoolExecutor
 from datetime import UTC, datetime
 from typing import Any
@@ -65,17 +66,70 @@ def needs_ingest(obj: dict[str, Any], seen: dict[str, str]) -> str | None:
     return None if prev == obj["etag"] else "changed"
 
 
+def dataset_credentials(env: Mapping[str, str] | None = None) -> tuple[str, str] | None:
+    """Credenciales propias del bucket del reto (DATASET_AWS_*), separadas de las del lago.
+
+    AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY tienen prioridad sobre el rol de la tarea: si se usaran para el
+    dataset, el pipeline escribiría en el lago con claves de solo lectura de otra cuenta. Sin DATASET_AWS_*,
+    el dataset usa la cadena estándar (desarrollo local con las claves del reto en el entorno).
+    """
+    env = os.environ if env is None else env
+    key, secret = env.get("DATASET_AWS_ACCESS_KEY_ID"), env.get("DATASET_AWS_SECRET_ACCESS_KEY")
+    return (key, secret) if key and secret else None
+
+
+def _sql_str(value: str) -> str:
+    return "'" + value.replace("'", "''") + "'"
+
+
+def secret_statements(settings: Settings, creds: tuple[str, str] | None) -> list[str]:
+    """Dos secretos de DuckDB: el lago (cadena estándar, su región) y el dataset (su credencial, su región,
+    acotado por prefijo al bucket del reto; DuckDB usa el secreto de alcance más largo)."""
+    # El secreto de cadena solo se crea con el lago en S3: sin credenciales la validación del secreto falla.
+    lake = (
+        [f"CREATE OR REPLACE SECRET lake (TYPE s3, PROVIDER credential_chain, REGION {_sql_str(settings.region)})"]
+        if settings.is_remote else []
+    )
+    scope = _sql_str(f"s3://{settings.dataset_bucket}/")
+    if creds:
+        dataset = (
+            f"CREATE OR REPLACE SECRET dataset (TYPE s3, KEY_ID {_sql_str(creds[0])}, SECRET {_sql_str(creds[1])}, "
+            f"REGION {_sql_str(settings.dataset_region)}, SCOPE {scope})"
+        )
+    else:
+        dataset = (
+            f"CREATE OR REPLACE SECRET dataset (TYPE s3, PROVIDER credential_chain, "
+            f"REGION {_sql_str(settings.dataset_region)}, SCOPE {scope})"
+        )
+    return [*lake, dataset]
+
+
 def _connect(settings: Settings) -> duckdb.DuckDBPyConnection:
     con = duckdb.connect()
     con.execute("INSTALL httpfs; LOAD httpfs;")
-    con.execute(f"SET s3_region='{settings.region}'")
-    # Credenciales por la cadena estándar (variables de entorno o rol de la tarea ECS).
-    con.execute("CREATE OR REPLACE SECRET aws_chain (TYPE s3, PROVIDER credential_chain)")
+    try:
+        for statement in secret_statements(settings, dataset_credentials()):
+            con.execute(statement)
+    except duckdb.Error as exc:
+        # El mensaje de DuckDB puede citar la sentencia: no se reenvía. Solo se dice qué falta.
+        raise SystemExit(
+            "No se pudieron crear las credenciales de S3. Defina DATASET_AWS_ACCESS_KEY_ID y "
+            "DATASET_AWS_SECRET_ACCESS_KEY (bucket del reto) y, si el lago es s3://, un rol o credenciales "
+            f"estándar de AWS ({type(exc).__name__})."
+        ) from None
     return con
 
 
+def _dataset_client(settings: Settings) -> Any:
+    creds = dataset_credentials()
+    kwargs: dict[str, Any] = {"region_name": settings.dataset_region}
+    if creds:
+        kwargs.update(aws_access_key_id=creds[0], aws_secret_access_key=creds[1])
+    return boto3.client("s3", **kwargs)
+
+
 def _list_objects(settings: Settings, tables: tuple[str, ...]) -> list[dict[str, Any]]:
-    s3 = boto3.client("s3", region_name=settings.region)
+    s3 = _dataset_client(settings)
     out: list[dict[str, Any]] = []
     for page in s3.get_paginator("list_objects_v2").paginate(
         Bucket=settings.dataset_bucket, Prefix=settings.dataset_prefix
