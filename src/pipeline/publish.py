@@ -7,6 +7,7 @@ esquema llamado "restricted" dentro de un mismo .duckdb es solo una convención.
   publish/<run_id>/gold_masked.duckdb                 read-models por cliente con PII enmascarada (generado del catálogo)
   publish/<run_id>/gold_restricted.duckdb             PII en claro y clasificada; solo tools autenticadas
   publish/<run_id>/field_classification.json          catálogo para agent-core (--field-classifier)
+  publish/<run_id>/read_model_contract.json           contrato de lectura de los read-models (grano, llaves, nulos, corte)
   publish/<run_id>/release.json                       lineage, hashes y calidad de esta publicación
   publish/latest.json                                 puntero; se escribe al final (conmutación atómica)
 
@@ -28,6 +29,7 @@ import duckdb
 
 from pipeline.config import Settings
 from pipeline.export_catalog import build as build_catalog
+from pipeline.read_contract import ORDER_BY, build_contract, check_documented
 
 ANALYTICS_SCHEMA = "gold_analytics"
 RESTRICTED_SCHEMA = "gold_restricted"
@@ -81,7 +83,11 @@ def check_guards(con: duckdb.DuckDBPyConnection, catalog: dict[str, dict[str, An
                     raise PublishError(f"{schema}.{t}: columnas sin clasificar {missing}")
 
 
-def _copy_schema(src: duckdb.DuckDBPyConnection, db_path: Path, schema: str, parquet_dir: Path | None) -> dict[str, int]:
+def _copy_schema(
+    src: duckdb.DuckDBPyConnection, db_path: Path, schema: str, parquet_dir: Path | None, subject: str | None = None
+) -> dict[str, int]:
+    """`subject`: si se da, las tablas con orden físico definido (ORDER_BY) se publican ordenadas por esa columna del
+    sujeto, lo que acelera la consulta puntual por cliente. El orden es una optimización, no una garantía."""
     catalog = src.execute("select current_database()").fetchone()[0]  # el archivo puede llamarse como el esquema
     out = duckdb.connect(str(db_path))
     out.execute(f'create schema "{schema}"."{schema}"')
@@ -89,7 +95,8 @@ def _copy_schema(src: duckdb.DuckDBPyConnection, db_path: Path, schema: str, par
     for t in tables_of(src, schema):
         if t in NEVER_PUBLISH_TABLES:
             continue
-        df = src.execute(f'select * from "{catalog}"."{schema}"."{t}"').to_arrow_table()
+        order = f" order by {ORDER_BY[t].replace('customer_id', subject)}" if subject and t in ORDER_BY else ""
+        df = src.execute(f'select * from "{catalog}"."{schema}"."{t}"{order}').to_arrow_table()
         out.register("tmp_t", df)
         out.execute(f'create table "{schema}"."{schema}"."{t}" as select * from tmp_t')
         out.unregister("tmp_t")
@@ -107,16 +114,22 @@ def publish(warehouse: Path, dest_root: Path, run_id: str | None = None) -> Path
     src = duckdb.connect(str(warehouse), read_only=True)
     check_guards(src, catalog)
 
+    # Antes de crear nada: un fallo aquí no debe dejar un directorio que bloquee el reintento (publicaciones inmutables).
+    published_models = [t for z in (RESTRICTED_SCHEMA, MASKED_SCHEMA) for t in tables_of(src, z) if t not in NEVER_PUBLISH_TABLES]
+    check_documented(published_models)
+
     out_dir = dest_root / "publish" / run_id
     if out_dir.exists():
         raise PublishError(f"{out_dir} ya existe: las publicaciones son inmutables")
     out_dir.mkdir(parents=True)
 
     analytics_rows = _copy_schema(src, out_dir / "gold_analytics.duckdb", ANALYTICS_SCHEMA, out_dir / "parquet")
-    restricted_rows = _copy_schema(src, out_dir / "gold_restricted.duckdb", RESTRICTED_SCHEMA, None)
-    masked_rows = _copy_schema(src, out_dir / "gold_masked.duckdb", MASKED_SCHEMA, None)
+    restricted_rows = _copy_schema(src, out_dir / "gold_restricted.duckdb", RESTRICTED_SCHEMA, None, "customer_id")
+    masked_rows = _copy_schema(src, out_dir / "gold_masked.duckdb", MASKED_SCHEMA, None, "customer_pseudo")
     (out_dir / "field_classification.json").write_text(
         json.dumps(catalog, ensure_ascii=False, indent=2), encoding="utf-8")
+    contract = build_contract(src, catalog, run_id, {"restricted": RESTRICTED_SCHEMA, "masked": MASKED_SCHEMA})
+    (out_dir / "read_model_contract.json").write_text(json.dumps(contract, ensure_ascii=False, indent=2), encoding="utf-8")
 
     dq = src.execute(
         "select table_name, outcome, rows from gold_analytics.dq_quarantine where outcome <> 'valid' order by 1, 2"

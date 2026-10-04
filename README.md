@@ -4,6 +4,7 @@ Pipeline analítico (arquitectura medallón: bronze, silver, gold) con dbt + Duc
 
 - Plan: [docs/00-plan-v1.md](docs/00-plan-v1.md)
 - Gobierno de datos y enmascaramiento: [docs/02-gobierno-de-datos.md](docs/02-gobierno-de-datos.md)
+- Contrato de lectura de los read-models y vínculo con la plataforma: [docs/03-contrato-de-lectura-y-vinculo.md](docs/03-contrato-de-lectura-y-vinculo.md)
 - Hallazgos de calidad del dataset: [docs/01-hallazgos-de-calidad.md](docs/01-hallazgos-de-calidad.md)
 
 ## Reglas
