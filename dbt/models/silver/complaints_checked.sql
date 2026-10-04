@@ -1,4 +1,5 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
+{# table, no view: silver, cuarentena y los marts de calidad la leen; una vista la recalcularía en cada uno #}
 {# Los nulos de resolución son de ESTADO (caso abierto), no faltantes: is_open los explica. #}
 with ranked as (
     select *, row_number() over (partition by complaint_id order by _ingested_at desc) as _rn

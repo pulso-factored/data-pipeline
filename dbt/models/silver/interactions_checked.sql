@@ -1,4 +1,5 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
+{# table, no view: silver, cuarentena y los marts de calidad la leen; una vista la recalcularía en cada uno #}
 {# call_center_interactions tipado. contact_reason == reason_category (6 valores): no distingue intenciones.
    Una fila por interaction_id; fuera de rango, huérfanas o con duraciones negativas van a cuarentena. #}
 with ranked as (

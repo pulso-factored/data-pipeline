@@ -1,4 +1,5 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
+{# table, no view: silver, cuarentena y los marts de calidad la leen; una vista la recalcularía en cada uno #}
 {# Encuestas posteriores a la interacción. Escalas observadas más estrechas que las documentadas: CSAT 1-4 (doc 1-5),
    NPS 2-7 (doc 0-10), CES 1-4. nps_category solo existe en las encuestas NPS (nulo estructural).
    open_comments es untrusted_text. Una fila por survey_id; interaction_id puede ser nulo (FK opcional). #}

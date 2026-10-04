@@ -1,4 +1,5 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
+{# table, no view: silver, cuarentena y los marts de calidad la leen; una vista la recalcularía en cada uno #}
 {# Transcripciones: un bloque de texto por llamada, sin hora por mensaje (por eso NO se convierten en turns del
    contrato: turn.event_time es obligatorio). El texto es untrusted_text; mentioned_entities (JSON) puede traer PII. #}
 with ranked as (

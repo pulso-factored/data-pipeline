@@ -1,4 +1,5 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
+{# table, no view: silver, cuarentena y los marts de calidad la leen; una vista la recalcularía en cada uno #}
 {# product_number debe ser único (6 duplicados observados): gana el último actualizado, el resto a cuarentena. #}
 with typed as (
     select

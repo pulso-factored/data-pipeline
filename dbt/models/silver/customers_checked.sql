@@ -1,4 +1,5 @@
-{{ config(materialized='view') }}
+{{ config(materialized='table') }}
+{# table, no view: silver, cuarentena y los marts de calidad la leen; una vista la recalcularía en cada uno #}
 {# Tipado + normalización + banderas de nulo. Dedup por PK (gana el último ingestado).
    branch_link_valid es una bandera, NO motivo de cuarentena: el diccionario promete la FK
    pero 149.995/150.000 no enlazan; descartar filas dejaría la dimensión vacía. #}
