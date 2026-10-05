@@ -20,7 +20,7 @@ import boto3
 import duckdb
 import pyarrow as pa
 
-from pipeline.config import Settings
+from pipeline.config import Settings, bound_duckdb
 
 DIMENSIONS = (
     "customers",
@@ -105,7 +105,7 @@ def secret_statements(settings: Settings, creds: tuple[str, str] | None) -> list
 
 
 def _connect(settings: Settings) -> duckdb.DuckDBPyConnection:
-    con = duckdb.connect()
+    con = bound_duckdb(duckdb.connect())
     con.execute("INSTALL httpfs; LOAD httpfs;")
     try:
         for statement in secret_statements(settings, dataset_credentials()):

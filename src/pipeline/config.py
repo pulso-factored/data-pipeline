@@ -5,6 +5,8 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
+import duckdb
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -40,3 +42,14 @@ class Settings:
     def eval_path(self) -> str:
         """Base propia de la zona del evaluador (labels y timeline); nunca dentro del warehouse."""
         return f"{self.work_dir}/eval.duckdb"
+
+
+def bound_duckdb(con: duckdb.DuckDBPyConnection) -> duckdb.DuckDBPyConnection:
+    """Acota una conexión de DuckDB con DUCKDB_MEMORY_LIMIT y DUCKDB_TEMP_DIRECTORY si están definidas (el loader de infra
+    las pasa); sin ellas no cambia nada. Los modelos de dbt las leen en dbt/profiles.yml."""
+    limit, temp = os.environ.get("DUCKDB_MEMORY_LIMIT"), os.environ.get("DUCKDB_TEMP_DIRECTORY")
+    if limit:
+        con.execute(f"SET memory_limit = '{limit.replace(chr(39), '')}'")
+    if temp:
+        con.execute(f"SET temp_directory = '{temp.replace(chr(39), '')}'")
+    return con
