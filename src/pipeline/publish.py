@@ -27,7 +27,7 @@ from typing import Any
 
 import duckdb
 
-from pipeline.config import Settings
+from pipeline.config import Settings, bound_duckdb
 from pipeline.export_catalog import build as build_catalog
 from pipeline.read_contract import ORDER_BY, build_contract, check_documented
 
@@ -89,7 +89,7 @@ def _copy_schema(
     """`subject`: si se da, las tablas con orden físico definido (ORDER_BY) se publican ordenadas por esa columna del
     sujeto, lo que acelera la consulta puntual por cliente. El orden es una optimización, no una garantía."""
     catalog = src.execute("select current_database()").fetchone()[0]  # el archivo puede llamarse como el esquema
-    out = duckdb.connect(str(db_path))
+    out = bound_duckdb(duckdb.connect(str(db_path)))
     out.execute(f'create schema "{schema}"."{schema}"')
     rows: dict[str, int] = {}
     for t in tables_of(src, schema):
@@ -111,7 +111,7 @@ def _copy_schema(
 def publish(warehouse: Path, dest_root: Path, run_id: str | None = None) -> Path:
     run_id = run_id or f"run-{datetime.now(UTC):%Y%m%dT%H%M%SZ}"
     catalog = build_catalog()
-    src = duckdb.connect(str(warehouse), read_only=True)
+    src = bound_duckdb(duckdb.connect(str(warehouse), read_only=True))
     check_guards(src, catalog)
 
     # Antes de crear nada: un fallo aquí no debe dejar un directorio que bloquee el reintento (publicaciones inmutables).

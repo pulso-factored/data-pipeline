@@ -17,7 +17,7 @@ from pathlib import Path
 
 import duckdb
 
-from pipeline.config import Settings
+from pipeline.config import Settings, bound_duckdb
 from pipeline.contract import ContractError, load_contract, validate_entity
 
 HISTORY_TABLES = (
@@ -46,7 +46,7 @@ def run(source_dir: Path, force: bool = False) -> dict[str, str]:
     history = load_contract(contratos / "platform_history.json")
     version = history["version"]
     manifest_path = f"{settings.root}/bronze/_manifest/e0.parquet"
-    con = duckdb.connect()
+    con = bound_duckdb(duckdb.connect())
 
     try:
         prev = {r[0]: r for r in con.execute(f"SELECT * FROM read_parquet('{manifest_path}')").fetchall()}

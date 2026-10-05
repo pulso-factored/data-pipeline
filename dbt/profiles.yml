@@ -3,6 +3,8 @@
 # los mismos núcleos y la misma memoria. Medido: build completo 17m46s con 4 hilos vs 6m18s con 1 (mismo resultado).
 # DBT_THREADS lo cambia si algún día hay modelos que no saturen la máquina.
 # WAREHOUSE_PATH: archivo local (scratch). PIPELINE_ROOT: ruta local (target dev) o s3://bucket/prefijo (target s3).
+# Targets s3/eval_s3 (lago remoto, p. ej. el loader): DuckDB acotado con DUCKDB_MEMORY_LIMIT (def. 2GB) y derrame en
+# DUCKDB_TEMP_DIRECTORY (def. $WORK_DIR/duckdb_tmp). Los targets locales no se acotan.
 # El target s3 toma las credenciales de la cadena estándar de AWS (rol de la tarea ECS); el runner lo elige solo.
 data_pipeline:
   target: dev
@@ -15,6 +17,9 @@ data_pipeline:
       type: duckdb
       path: "{{ env_var('WAREHOUSE_PATH') }}"
       threads: "{{ env_var('DBT_THREADS', 1) | int }}"
+      settings:
+        memory_limit: "{{ env_var('DUCKDB_MEMORY_LIMIT', '2GB') }}"
+        temp_directory: "{{ env_var('DUCKDB_TEMP_DIRECTORY', env_var('WORK_DIR', '.') ~ '/duckdb_tmp') }}"
       extensions:
         - httpfs
       secrets:
@@ -33,6 +38,9 @@ data_pipeline:
       type: duckdb
       path: "{{ env_var('EVAL_PATH') }}"
       threads: "{{ env_var('DBT_THREADS', 1) | int }}"
+      settings:
+        memory_limit: "{{ env_var('DUCKDB_MEMORY_LIMIT', '2GB') }}"
+        temp_directory: "{{ env_var('DUCKDB_TEMP_DIRECTORY', env_var('WORK_DIR', '.') ~ '/duckdb_tmp') }}"
       extensions:
         - httpfs
       secrets:
